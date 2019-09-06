@@ -1,0 +1,125 @@
+* Transient CLI in Python
+:PROPERTIES:
+:header-args:python: :session pytransient :kernel python3 :display plain
+:END:
+
+** Motivation
+
+-   Magit is an awesome tool to interact with git in emacs
+-   It has a great interface using transient states
+-   It relies on the `transient` library in emacs (https://magit.vc/manual/transient/)
+-   Emacs is not used by everyone and there are no libraries implementing similar transient CLIs in python
+
+** Definition
+
+-   pytransient is a python tool to help you build interactive user interfaces in the terminal
+-   pytransient wraps around existing CLI
+-   pytransient is not a replacement for click, fire, docopt, argparse, etc
+
+** Architecture
+
+-   use pynput to listen to keyboard
+
+** Required abilities
+
+*** Clearing the screen
+
+#+BEGIN_SRC python
+  import os
+  print("foo\n"*10)
+  os.system('clear')
+#+END_SRC
+
+#+RESULTS:
+:RESULTS:
+#+begin_example
+  foo
+  foo
+  foo
+  foo
+  foo
+  foo
+  foo
+  foo
+  foo
+  foo
+#+end_example
+: 0
+:END:
+
+
+*** Change the color weight of the font
+#+BEGIN_SRC python
+class color:
+   PURPLE = '\033[95m'
+   CYAN = '\033[96m'
+   DARKCYAN = '\033[36m'
+   BLUE = '\033[94m'
+   GREEN = '\033[92m'
+   YELLOW = '\033[93m'
+   RED = '\033[91m'
+   BOLD = '\033[1m'
+   UNDERLINE = '\033[4m'
+   END = '\033[0m'
+
+print(color.BOLD + 'Hello World !' + color.END)
+#+END_SRC
+
+#+RESULTS:
+: [1mHello World ![0m
+
+*** Print data in a table format (using tabulate)
+#+BEGIN_SRC python
+from tabulate import tabulate
+table = [[f"{color.BOLD}spam{color.END}",42],["eggs",451],["bacon",0]]
+headers = ["item", "qty"]
+print(tabulate(table, headers, tablefmt="plain"))
+#+END_SRC
+
+#+RESULTS:
+: item      qty
+: [1mspam[0m       42
+: eggs      451
+: bacon       0
+
+*** Create modifiable window
+- use python prompt toolkit
+
+#+BEGIN_SRC python
+from __future__ import unicode_literals
+from prompt_toolkit import prompt
+
+text = prompt('Give me some input: ')
+print('You said: %s' % text)
+#+END_SRC
+
+
+- [[https://python-prompt-toolkit.readthedocs.io/en/master/pages/asking_for_input.html#adding-custom-key-bindings][use keybindings]]
+- use HTML formatted text
+- add abstraction over bolding text and printing text
+
+*** Architecture
+- follow transient architecture:
+  - prefix command, infix arguments, suffix command
+  - groups
+- each command and argument has:
+  - a name
+  - a keybinding
+  - a description (optional)
+  - a matching cli action (for argument and suffix)
+
+- classes to write
+  - Command
+    - has: str name
+    - has: str binding
+    - has: str description
+    - has: str cli
+    - has: str type
+    - has: bool is_active
+  - Group
+    - has: List[Command] commands
+    - title: str
+  - Menu:
+    - has: List[Group] groups
+
+*** write configuration in TOML/YAML/JSON 
