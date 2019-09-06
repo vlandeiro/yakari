@@ -86,7 +86,6 @@ print(tabulate(table, headers, tablefmt="plain"))
 - use python prompt toolkit
 
 #+BEGIN_SRC python
-from __future__ import unicode_literals
 from prompt_toolkit import prompt
 
 text = prompt('Give me some input: ')

@@ -1,38 +1,72 @@
 from prompt_toolkit import Application, HTML
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.containers import Window
-from prompt_toolkit.layout.controls import FormattedTextControl
-from prompt_toolkit.layout.layout import Layout
-
-root_container = Window(
-    content=FormattedTextControl(text="Hello world"), always_hide_cursor=True
+from prompt_toolkit.buffer import Buffer
+from prompt_toolkit.layout import (
+    Dimension,
+    Layout,
+    FormattedTextControl,
+    Window,
+    VSplit,
+    HSplit,
 )
-
-layout = Layout(root_container)
-
-kb = KeyBindings()
+from prompt_toolkit.widgets import TextArea, Label
+from .core import Menu, Argument
 
 
-@kb.add("q")
-def exit_(event):
-    """
-    Pressing Ctrl-Q will exit the user interface.
+class TransientApp:
+    def __init__(self, action: str, main_menu: Menu):
+        self.action = action
+        self.menu_stack = [main_menu]
+        self._setup_app()
 
-    Setting a return value means: quit the event loop that drives the user
-    interface and return this value from the `Application.run()` call.
-    """
-    event.app.exit()
+    def edit_argument_container(self, argument: Argument):
+        def set_argument_value(buff):
+            argument.value = buff
 
+        return TextArea(
+            multiline=False,
+            scrollbar=False,
+            width=Dimension(weight=4),
+            get_line_prefix=lambda line, wrap_count: HTML(f"<b>{argument.action}</b>"),
+            accept_handler=set_argument_value,
+        )
 
-@kb.add("t")
-def replace_content(event):
-    root_container.content = FormattedTextControl(text=HTML("<b>Hello</b> world"))
+    def _setup_app(self):
+        self.display_buffer = TextArea(
+            height=Dimension(preferred=100),
+            focus_on_click=True,
+            dont_extend_height=True,
+            dont_extend_width=True,
+            scrollbar=True,
+        )
+        self.transient_menu = TextArea(
+            height=Dimension(preferred=30),
+            read_only=True,
+            dont_extend_height=True,
+            dont_extend_width=True,
+        )
+        self.edit_arg_menu = TextArea(
+            height=Dimension(preferred=10),
+            focus_on_click=True,
+            dont_extend_height=True,
+            dont_extend_width=True,
+            multiline=False,
+            scrollbar=False,
+        )
+        self.root = HSplit(
+            [self.display_buffer, self.transient_menu, self.edit_arg_menu],
+            padding_char="-",
+            padding=1,
+        )
+        self.layout = Layout(self.root)
+        self.kb = KeyBindings()
+        self.app = Application(
+            layout=self.layout, key_bindings=self.kb, full_screen=False
+        )
+        self.kb.add("c-q")(self._exit)
 
+    def _exit(self, event):
+        event.app.exit()
 
-@kb.add("-", "t")
-def replace_content(event):
-    root_container.content = FormattedTextControl(text=HTML("<i>Hello</i> world"))
-
-
-app = Application(layout=layout, key_bindings=kb, full_screen=False)
-app.run()
+    def run(self, *args, **kwargs):
+        self.app.run(*args, **kwargs)
