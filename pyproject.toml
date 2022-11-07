@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "pytransient"
+version = "0.1.0"
+description = ""
+authors = ["Virgile Landeiro <virgile.landeiro@gmail.com>"]
+readme = "README.org"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+textual = {extras = ["dev"], version = "^0.2.1"}
+toml = "^0.10.2"
+attrs = "^22.1.0"
+structlog = "^22.1.0"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

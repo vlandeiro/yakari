@@ -1,0 +1,47 @@
+[git]
+_kind = "action"
+_key = "g"
+
+# git checkout
+[git.checkout]
+_kind = "action"
+_key = "c"
+
+[git.checkout.quiet]
+_kind = "flag"
+_key = "-q"
+
+[git.checkout.branch]
+_kind = "named"
+_key = "-b"
+
+[git.checkout.track]
+_kind = "flag"
+_key = "-t"
+
+# git status
+[git.status]
+_kind = "action"
+_key = "s"
+
+[git.status.branch]
+_kind = "named"
+_key = "-b"
+
+[git.status.short]
+_kind = "flag"
+_key = "-s"
+
+[git.status.show-stash]
+_kind = "flag"
+_key = "-S"
+_render = "--show-stash"
+
+# git clone
+[git.clone]
+_kind = "action"
+_key = "C"
+
+[git.clone.directory]
+_kind = "positional"
+_key = "d"

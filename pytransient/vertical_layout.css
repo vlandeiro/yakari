@@ -1,0 +1,20 @@
+Screen {
+    layout: vertical;
+}
+
+.box {
+    height: 1fr;
+    border: solid green;
+}
+
+#sidebar {
+    dock: right;
+    width: 30%;
+    height: 100%;
+}
+
+#footer {
+    dock: bottom;
+    width: 100%;
+    height: 10%;
+}
