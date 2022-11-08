@@ -1,72 +1,107 @@
-from prompt_toolkit import Application, HTML
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.buffer import Buffer
-from prompt_toolkit.layout import (
-    Dimension,
-    Layout,
-    FormattedTextControl,
-    Window,
-    VSplit,
-    HSplit,
-)
-from prompt_toolkit.widgets import TextArea, Label
-from .core import Menu, Argument
+import pkgutil
+import subprocess
+import sys
+from typing import Callable
+from uuid import uuid4
+
+import click
+import structlog
+from rich.table import Table
+from textual import events, log
+from textual.app import App, ComposeResult
+from textual.binding import Binding
+from textual.containers import Grid
+from textual.message import Message, MessageTarget
+from textual.reactive import reactive
+from textual.screen import Screen
+from textual.widget import Widget
+from textual.widgets import Button, Footer, Header, Input, TextLog
+
+from .action import Action, Argument
+from .config import Config
+from .state_machine import StateMachine
+
+log = structlog.get_logger()
 
 
-class TransientApp:
-    def __init__(self, action: str, main_menu: Menu):
-        self.action = action
-        self.menu_stack = [main_menu]
-        self._setup_app()
+class InputScreen(Screen):
+    def __init__(self, argument, *args, **kwargs):
+        self.argument = argument
+        self.user_input = Input(id="user-input", placeholder="value")
+        super().__init__(*args, **kwargs)
 
-    def edit_argument_container(self, argument: Argument):
-        def set_argument_value(buff):
-            argument.value = buff
+    def compose(self) -> ComposeResult:
+        yield self.user_input
 
-        return TextArea(
-            multiline=False,
-            scrollbar=False,
-            width=Dimension(weight=4),
-            get_line_prefix=lambda line, wrap_count: HTML(f"<b>{argument.action}</b>"),
-            accept_handler=set_argument_value,
+    def on_key(self, event: events.Key):
+        if event.key == "enter":
+            self.argument.value = self.user_input.value
+            self.argument.toggle(True)
+            event.stop()
+            self.app.pop_screen()
+
+        elif event.key in {"ctrl+g", "escape"}:
+            event.stop()
+            self.app.pop_screen()
+
+
+class CLIConfigWidget(Widget):
+    def __init__(self, action: Action, value_setter: Callable, *args, **kwargs):
+        self.state_machine = StateMachine.from_action(action, value_setter)
+        super().__init__(*args, **kwargs)
+
+    def on_key(self, event: events.Key) -> None:
+        self.state_machine.apply(event.key, event.char)
+
+    def generate_command(self) -> str:
+        return self.state_machine.generate_command()
+
+    def render(self):
+        return self.state_machine
+
+
+class PyTransientApp(App):
+    CSS_PATH = "vertical_layout.css"
+
+    BINDINGS = [
+        Binding(
+            key="ctrl+g",
+            key_display="CTRL+G",
+            action="do_nothing_1",
+            description="Go back",
+        ),
+        Binding(
+            key="enter",
+            key_display="ENTER",
+            action="do_nothing_2",
+            description="Run the command",
+        ),
+    ]
+
+    def __init__(self, command, *args, **kwargs):
+        self.command: Action = command
+        super().__init__(*args, **kwargs)
+
+    def on_key(self, event: events.Key) -> None:
+        if event.key == "enter":
+            cmd = self.config_widget.generate_command()
+            self.app.action_quit()
+            self.app.exit(cmd)
+
+        self.config_widget.on_key(event)
+        self.config_widget.refresh()
+
+    def compose(self) -> ComposeResult:
+        """Create child widgets for the app."""
+
+        def value_setter(arg):
+            input_screen = InputScreen(arg)
+            self.push_screen(input_screen)
+            input_screen.user_input.focus()
+
+        self.config_widget = CLIConfigWidget(
+            self.command, value_setter, id="command-selection"
         )
 
-    def _setup_app(self):
-        self.display_buffer = TextArea(
-            height=Dimension(preferred=100),
-            focus_on_click=True,
-            dont_extend_height=True,
-            dont_extend_width=True,
-            scrollbar=True,
-        )
-        self.transient_menu = TextArea(
-            height=Dimension(preferred=30),
-            read_only=True,
-            dont_extend_height=True,
-            dont_extend_width=True,
-        )
-        self.edit_arg_menu = TextArea(
-            height=Dimension(preferred=10),
-            focus_on_click=True,
-            dont_extend_height=True,
-            dont_extend_width=True,
-            multiline=False,
-            scrollbar=False,
-        )
-        self.root = HSplit(
-            [self.display_buffer, self.transient_menu, self.edit_arg_menu],
-            padding_char="-",
-            padding=1,
-        )
-        self.layout = Layout(self.root)
-        self.kb = KeyBindings()
-        self.app = Application(
-            layout=self.layout, key_bindings=self.kb, full_screen=False
-        )
-        self.kb.add("c-q")(self._exit)
-
-    def _exit(self, event):
-        event.app.exit()
-
-    def run(self, *args, **kwargs):
-        self.app.run(*args, **kwargs)
+        yield self.config_widget
+        yield Footer()

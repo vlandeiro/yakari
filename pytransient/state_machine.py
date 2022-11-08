@@ -1,21 +1,25 @@
-from typing import Optional, List, Any, Dict, Type, Union, Callable
-from enum import Enum
-from .constants import *
 import json
-from attrs import define, field, asdict
-from rich.table import Table
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Type, Union
+
 import structlog
-from .config import Config
-from .action import Action, Argument, Flag, NamedArgument
-from rich.table import Table
+from attrs import asdict, define, field
 from rich.console import Console, ConsoleOptions, RenderResult
+from rich.table import Table
+
+from .action import Action, Argument, Flag, NamedArgument
+from .config import Config
+from .constants import *
 
 log = structlog.get_logger()
+
 
 @define
 class StateMachine:
     stack: List[Action] = field(repr=lambda x: [action.name for action in x])
-    transitions: Dict[str, Argument] = field(repr=lambda x: {src: x[src].name for src in x.keys()})
+    transitions: Dict[str, Argument] = field(
+        repr=lambda x: {src: x[src].name for src in x.keys()}
+    )
     value_setter: Callable
     input_buffer: str = ""
 
@@ -24,11 +28,7 @@ class StateMachine:
         transitions = cls._get_transitions_from_action(action)
         action.toggle()
         stack = [action]
-        return cls(
-            stack=stack,
-            transitions=transitions,
-            value_setter=value_setter
-        )
+        return cls(stack=stack, transitions=transitions, value_setter=value_setter)
 
     def apply(self, key: str, char: str):
         log.debug(f"Received transition key={key}, char={char}")
@@ -83,16 +83,15 @@ class StateMachine:
 
     @staticmethod
     def _get_transitions_from_action(action: Action):
-        return {
-            arg.key: arg
-            for arg in action.arguments
-        }
+        return {arg.key: arg for arg in action.arguments}
 
     def _reset_input_buffer(self):
         log.debug("Resetting input buffer.")
         self.input_buffer = ""
 
-    def __rich_console__(self, console: Console, options: ConsoleOptions) -> RenderResult:
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
         table = Table()
 
         table.add_column("Name")
@@ -107,11 +106,17 @@ class StateMachine:
             if isinstance(arg, Action):
                 table.add_row(f"[{arg.key}] {arg_name}", arg.help_msg)
             elif isinstance(arg, Flag):
-                table.add_row(f"[{arg.key}] {arg_name}", arg.help_msg, str(arg.is_active))
+                table.add_row(
+                    f"[{arg.key}] {arg_name}", arg.help_msg, str(arg.is_active)
+                )
             else:
                 table.add_row(f"[{arg.key}] {arg_name}", arg.help_msg, arg.value)
 
         yield table
+
+    def generate_command(self):
+        return self.stack[0].generate_command()
+
 
 if __name__ == "__main__":
     config = Config.from_toml("./configurations/git.toml")
@@ -119,6 +124,7 @@ if __name__ == "__main__":
 
     def uuid_setter(arg):
         from uuid import uuid4
+
         arg.value = str(uuid4())
 
     state_machine = StateMachine.from_action(action, uuid_setter)
@@ -131,21 +137,21 @@ if __name__ == "__main__":
     # state is checkout
     # transitions are [-b] branch, [-q] quiet
     print(state_machine)
-    state_machine.apply(None, "-") # branch
-    state_machine.apply(None, "b") # branch
+    state_machine.apply(None, "-")  # branch
+    state_machine.apply(None, "b")  # branch
     print(state_machine)
     # state is branch
     # user inputs name of the branch
     # branch name is saved
     # state is checkout
     print(state_machine)
-    state_machine.apply(None, "-t") # branch
+    state_machine.apply(None, "-t")  # branch
     print(state_machine)
     print(state_machine)
-    state_machine.apply(None, "-t") # branch
+    state_machine.apply(None, "-t")  # branch
     print(state_machine)
     print(state_machine)
-    state_machine.apply("enter", "return") # finalize
+    state_machine.apply("enter", "return")  # finalize
     print(state_machine)
     # command is generated using BFS from start state, traversing active transitions
     log.info(asdict(config))

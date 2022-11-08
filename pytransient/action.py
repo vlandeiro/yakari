@@ -1,11 +1,14 @@
-from typing import Optional, List, Any, Dict, Type, Union, Callable
-from enum import Enum
-from .constants import *
 import json
-from attrs import define, field
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Type, Union
+
 import structlog
+from attrs import define, field
+
+from .constants import *
 
 log = structlog.get_logger()
+
 
 @define(slots=False)
 class Argument:
@@ -28,9 +31,7 @@ class Argument:
         try:
             key = arguments.pop(KEY)
         except KeyError:
-            raise ValueError(
-                f"Entry with name {name} must have a field named '{KEY}'."
-            )
+            raise ValueError(f"Entry with name {name} must have a field named '{KEY}'.")
         rendered = arguments.pop(RENDERED_NAME, None)
 
         common_kwargs = dict(
@@ -58,7 +59,7 @@ class Argument:
         elif kind == ArgumentType.FLAG:
             return Flag(**common_kwargs)
 
-    def toggle(self, value: Optional[bool]=None):
+    def toggle(self, value: Optional[bool] = None):
         log.debug(f"Toggled {self.__class__.__name__} {self.name}")
         if value is not None:
             self.is_active = self.value
@@ -72,9 +73,16 @@ class Action(Argument):
 
     def generate_command(self):
         active_arguments = [arg for arg in self.arguments if arg.is_active]
-        rendered_arguments = " ".join([arg.generate_command() for arg in active_arguments])
+        rendered_arguments = []
+        for arg in active_arguments:
+            cmd = arg.generate_command()
+            if isinstance(cmd, list):
+                rendered_arguments.extend(cmd)
+            else:
+                rendered_arguments.append(cmd)
         rendered_name = self.rendered or self.name
-        return f"{rendered_name} {rendered_arguments}"
+        return [rendered_name, *rendered_arguments]
+
 
 @define(slots=False)
 class NamedArgument(Argument):
@@ -87,6 +95,7 @@ class NamedArgument(Argument):
         else:
             rendered_key = self.rendered or self.key
             return f"{rendered_key}={self.value}"
+
 
 @define(slots=False)
 class Flag(Argument):

@@ -1,10 +1,6 @@
 Screen {
-    layout: vertical;
-}
-
-.box {
-    height: 1fr;
-    border: solid green;
+    align: center middle;
+    /* layout: vertical; */
 }
 
 #sidebar {
@@ -13,8 +9,15 @@ Screen {
     height: 100%;
 }
 
-#footer {
-    dock: bottom;
-    width: 100%;
-    height: 10%;
+#user-input {
+    content-align: center bottom;
+    width: 100;
+    height: 3;
+}
+
+
+#command-selection {
+    content-align: center middle;
+    width: auto;
+    height: auto;
 }

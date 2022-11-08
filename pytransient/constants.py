@@ -1,10 +1,12 @@
 from enum import Enum
 
+
 class ArgumentType(str, Enum):
     ACTION = "action"
     NAMED = "named"
     FLAG = "flag"
     POSITIONAL = "positional"
+
 
 KIND = "_kind"
 NAME = "_name"

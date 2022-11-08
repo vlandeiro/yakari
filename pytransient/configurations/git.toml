@@ -25,7 +25,7 @@ _kind = "action"
 _key = "s"
 
 [git.status.branch]
-_kind = "named"
+_kind = "flag"
 _key = "-b"
 
 [git.status.short]
