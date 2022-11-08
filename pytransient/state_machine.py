@@ -36,7 +36,7 @@ class StateMachine:
             return
 
         # Backtrack to the previous state
-        if key in {"escape", "ctrl+g"}:
+        if key == "ctrl+g":
             self.input_buffer = ""
             # backtrack until we reach the end of user-inputted commands
             if len(self.stack) > 1:
@@ -92,25 +92,30 @@ class StateMachine:
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
-        table = Table()
+        table = Table(show_header=False, box=None)
 
+        table.add_column("Key", justify="left", style="cyan")
         table.add_column("Name")
+        table.add_column("Rendered", style="dim")
         table.add_column("Help")
         table.add_column("Value")
+
         action = self.stack[-1]
         for arg in action.arguments:
-            arg_value = getattr(arg, "value", None)
-            arg_name = arg.name
-            if arg.is_active:
-                arg_name = f"*{arg.name}*"
-            if isinstance(arg, Action):
-                table.add_row(f"[{arg.key}] {arg_name}", arg.help_msg)
-            elif isinstance(arg, Flag):
-                table.add_row(
-                    f"[{arg.key}] {arg_name}", arg.help_msg, str(arg.is_active)
-                )
-            else:
-                table.add_row(f"[{arg.key}] {arg_name}", arg.help_msg, arg.value)
+            style = None
+            if arg.is_active and isinstance(arg, Flag):
+                style = "bold"
+
+            arg_value = None
+            if hasattr(arg, "value"):
+                arg_value = arg.value
+
+            arg_rendered = None
+            if arg.rendered:
+                arg_rendered = f"({arg.rendered})"
+            table.add_row(
+                arg.key, arg.name, arg_rendered, arg.help_msg, arg_value, style=style
+            )
 
         yield table
 

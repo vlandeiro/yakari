@@ -10,6 +10,7 @@ class ArgumentType(str, Enum):
 
 KIND = "_kind"
 NAME = "_name"
+HELP_MSG = "_help"
 RENDERED_NAME = "_render"
 KEY = "_key"
 VALUE_TYPE = "_value_type"

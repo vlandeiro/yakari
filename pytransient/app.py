@@ -40,7 +40,7 @@ class InputScreen(Screen):
             event.stop()
             self.app.pop_screen()
 
-        elif event.key in {"ctrl+g", "escape"}:
+        elif event.key == "ctrl+g":
             event.stop()
             self.app.pop_screen()
 

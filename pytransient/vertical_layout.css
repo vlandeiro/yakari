@@ -1,12 +1,10 @@
-Screen {
+InputScreen {
     align: center middle;
     /* layout: vertical; */
 }
 
-#sidebar {
-    dock: right;
-    width: 30%;
-    height: 100%;
+command-table {
+    border: none;
 }
 
 #user-input {
@@ -15,9 +13,8 @@ Screen {
     height: 3;
 }
 
-
 #command-selection {
-    content-align: center middle;
+    content-align: left top;
     width: auto;
     height: auto;
 }

@@ -33,12 +33,13 @@ class Argument:
         except KeyError:
             raise ValueError(f"Entry with name {name} must have a field named '{KEY}'.")
         rendered = arguments.pop(RENDERED_NAME, None)
+        help_msg = arguments.pop(HELP_MSG, "")
 
         common_kwargs = dict(
             name=name,
             key=key,
             is_active=False,
-            help_msg="",
+            help_msg=help_msg,
             rendered=rendered,
         )
 

@@ -2,6 +2,17 @@
 _kind = "action"
 _key = "g"
 
+# git fetch
+[git.fetch]
+_kind = "action"
+_key = "f"
+
+[git.fetch.prune]
+_kind = "flag"
+_help = "Prune deleted branches"
+_key = "-p"
+_render = "--prune"
+
 # git checkout
 [git.checkout]
 _kind = "action"
