@@ -24,6 +24,10 @@ class StateMachine:
     input_buffer: str = ""
 
     @classmethod
+    def empty(cls):
+        return cls([], dict(), lambda arg: None, "")
+
+    @classmethod
     def from_action(cls, action: Action, value_setter: Callable):
         transitions = cls._get_transitions_from_action(action)
         action.toggle()
@@ -98,23 +102,26 @@ class StateMachine:
         table.add_column("Name")
         table.add_column("Rendered", style="dim")
         table.add_column("Help")
-        table.add_column("Value")
+        table.add_column("Value", style="emphasize")
 
         action = self.stack[-1]
         for arg in action.arguments:
             style = None
-            if arg.is_active and isinstance(arg, Flag):
+            if arg.is_active:
                 style = "bold"
 
             arg_value = None
             if hasattr(arg, "value"):
                 arg_value = arg.value
 
+            arg_name = arg.name
+            if isinstance(arg, NamedArgument):
+                arg_name = f"{arg.name}="
             arg_rendered = None
             if arg.rendered:
                 arg_rendered = f"({arg.rendered})"
             table.add_row(
-                arg.key, arg.name, arg_rendered, arg.help_msg, arg_value, style=style
+                arg.key, arg_name, arg_rendered, arg.help_msg, arg_value, style=style
             )
 
         yield table

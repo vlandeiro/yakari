@@ -15,3 +15,5 @@ RENDERED_NAME = "_render"
 KEY = "_key"
 VALUE_TYPE = "_value_type"
 VALID_KINDS = set(ArgumentType)
+IS_ACTIVE = "_active"
+VALUE = "_value"

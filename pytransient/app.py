@@ -33,7 +33,7 @@ class InputScreen(Screen):
     def compose(self) -> ComposeResult:
         yield self.user_input
 
-    def on_key(self, event: events.Key):
+    def on_key(self, event: events.Key) -> None:
         if event.key == "enter":
             self.argument.value = self.user_input.value
             self.argument.toggle(True)
@@ -46,6 +46,7 @@ class InputScreen(Screen):
 
 
 class CLIConfigWidget(Widget):
+
     def __init__(self, action: Action, value_setter: Callable, *args, **kwargs):
         self.state_machine = StateMachine.from_action(action, value_setter)
         super().__init__(*args, **kwargs)
@@ -85,7 +86,6 @@ class PyTransientApp(App):
     def on_key(self, event: events.Key) -> None:
         if event.key == "enter":
             cmd = self.config_widget.generate_command()
-            self.app.action_quit()
             self.app.exit(cmd)
 
         self.config_widget.on_key(event)

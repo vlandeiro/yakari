@@ -2,6 +2,23 @@
 _kind = "action"
 _key = "g"
 
+[git.checkout]
+_kind = "action"
+_key = "c"
+
+[git.checkout.branch]
+_kind = "positional"
+_key = "-n"
+_value = "mainline"
+
+[git.checkout.quiet]
+_kind = "flag"
+_key = "-q"
+
+[git.checkout.track]
+_kind = "flag"
+_key = "-t"
+
 # git fetch
 [git.fetch]
 _kind = "action"
@@ -12,23 +29,7 @@ _kind = "flag"
 _help = "Prune deleted branches"
 _key = "-p"
 _render = "--prune"
-
-# git checkout
-[git.checkout]
-_kind = "action"
-_key = "c"
-
-[git.checkout.quiet]
-_kind = "flag"
-_key = "-q"
-
-[git.checkout.branch]
-_kind = "named"
-_key = "-b"
-
-[git.checkout.track]
-_kind = "flag"
-_key = "-t"
+_value = true
 
 # git status
 [git.status]
@@ -56,3 +57,4 @@ _key = "C"
 [git.clone.directory]
 _kind = "positional"
 _key = "d"
+_value = "."

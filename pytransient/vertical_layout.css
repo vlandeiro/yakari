@@ -1,6 +1,5 @@
 InputScreen {
     align: center middle;
-    /* layout: vertical; */
 }
 
 command-table {
@@ -8,7 +7,7 @@ command-table {
 }
 
 #user-input {
-    content-align: center bottom;
+    align: center bottom;
     width: 100;
     height: 3;
 }

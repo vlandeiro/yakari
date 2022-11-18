@@ -9,7 +9,6 @@ from .config import Config
 
 log = structlog.get_logger()
 
-
 @click.command()
 @click.argument("command-name")
 @click.option("--entry-point")

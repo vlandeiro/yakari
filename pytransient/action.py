@@ -34,8 +34,9 @@ class Argument:
             raise ValueError(f"Entry with name {name} must have a field named '{KEY}'.")
         rendered = arguments.pop(RENDERED_NAME, None)
         help_msg = arguments.pop(HELP_MSG, "")
+        value = arguments.pop(VALUE, None)
 
-        common_kwargs = dict(
+        kwargs = dict(
             name=name,
             key=key,
             is_active=False,
@@ -49,21 +50,32 @@ class Argument:
                 parsed_arg = Argument.from_dict(arg_name, arg)
                 parsed_arguments.append(parsed_arg)
 
-            return Action(**common_kwargs, arguments=parsed_arguments)
+            return Action(**kwargs, arguments=parsed_arguments)
 
         elif kind == ArgumentType.POSITIONAL:
-            return NamedArgument(**common_kwargs, is_positional=True)
+            kwargs["is_positional"] = True
+            if value:
+                kwargs["value"] = value
+                kwargs["is_active"] = True
+            return NamedArgument(**kwargs)
 
         elif kind == ArgumentType.NAMED:
-            return NamedArgument(**common_kwargs, is_positional=False)
+            if value:
+                kwargs["value"] = value
+                kwargs["is_active"] = True
+            return NamedArgument(**kwargs, is_positional=False)
 
         elif kind == ArgumentType.FLAG:
-            return Flag(**common_kwargs)
+            if value:
+                if not isinstance(value, bool):
+                    raise ValueError("Value for the flag argument '{arg_name}' must be a boolean.")
+                kwargs["is_active"] = value
+            return Flag(**kwargs)
 
     def toggle(self, value: Optional[bool] = None):
         log.debug(f"Toggled {self.__class__.__name__} {self.name}")
         if value is not None:
-            self.is_active = self.value
+            self.is_active = value
         else:
             self.is_active = not self.is_active
 
