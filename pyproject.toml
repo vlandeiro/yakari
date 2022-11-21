@@ -12,6 +12,7 @@ toml = "^0.10.2"
 attrs = "^22.1.0"
 structlog = "^22.1.0"
 click = "8.1.2"
+networkx = "2.6.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"

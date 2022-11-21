@@ -1,60 +1,59 @@
-[git]
-_kind = "action"
-_key = "g"
+# Main transient
+[main.branch]
+kind = "transient"
+key = "b"
 
-[git.checkout]
-_kind = "action"
-_key = "c"
+[main.log]
+kind = "transient"
+key = "l"
 
-[git.checkout.branch]
-_kind = "positional"
-_key = "-n"
-_value = "mainline"
+[main.fetch]
+kind = "transient"
+key = "f"
 
-[git.checkout.quiet]
-_kind = "flag"
-_key = "-q"
+# git branch transient
+[branch.quiet]
+kind = "flag"
+key = "-q"
 
-[git.checkout.track]
-_kind = "flag"
-_key = "-t"
+[branch.branch_name]
+kind = "argument"
+key = "-n"
 
-# git fetch
-[git.fetch]
-_kind = "action"
-_key = "f"
+[branch.start_point]
+kind = "argument"
+key = "-s"
 
-[git.fetch.prune]
-_kind = "flag"
-_help = "Prune deleted branches"
-_key = "-p"
-_render = "--prune"
-_value = true
+# git checkout [-q] <branch_name>
+[branch.checkout]
+kind = "command"
+key = "b"
+base = ["git", "checkout"]
+parameters = [
+       { name = "quiet", render = "-q", optional = true },
+       { name = "branch_name", render = "{branch_name}" },
+]
 
-# git status
-[git.status]
-_kind = "action"
-_key = "s"
+[branch.create]
+kind = "command"
+key = "c"
+base = ["git", "checkout"]
+parameters = [
+       { name = "branch_name", render = "{branch_name}" },
+       { name = "start_point", render = "{start_point}", optional = false },
+]
 
-[git.status.branch]
-_kind = "flag"
-_key = "-b"
+# git log transient
+[log.log]
+kind = "command"
+key = "l"
+base = [
+       "git", "log",
+]
 
-[git.status.short]
-_kind = "flag"
-_key = "-s"
-
-[git.status.show-stash]
-_kind = "flag"
-_key = "-S"
-_render = "--show-stash"
-
-# git clone
-[git.clone]
-_kind = "action"
-_key = "C"
-
-[git.clone.directory]
-_kind = "positional"
-_key = "d"
-_value = "."
+[fetch.fetch]
+kind = "command"
+key = "f"
+base = [
+       "git", "fetch"
+]

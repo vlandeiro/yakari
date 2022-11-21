@@ -209,6 +209,21 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "networkx"
+version = "2.6.2"
+description = "Python package for creating and manipulating graphs and networks"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+default = ["matplotlib (>=3.3)", "numpy (>=1.19)", "pandas (>=1.1)", "scipy (>=1.5,!=1.6.1)"]
+developer = ["black (==21.5b1)", "pre-commit (>=2.12)"]
+doc = ["nb2plots (>=0.6)", "numpydoc (>=1.1)", "pillow (>=8.2)", "pydata-sphinx-theme (>=0.6,<1.0)", "sphinx (>=4.0,<5.0)", "sphinx-gallery (>=0.9,<1.0)", "texext (>=0.6.6)"]
+extra = ["lxml (>=4.5)", "pydot (>=1.4.1)", "pygraphviz (>=1.7)"]
+test = ["codecov (>=2.1)", "pytest (>=6.2)", "pytest-cov (>=2.12)"]
+
+[[package]]
 name = "pathspec"
 version = "0.10.1"
 description = "Utility library for gitignore style pattern matching of file paths."
@@ -351,7 +366,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "0020d7065140c57c0d755a786cf899b8744f758ab5f496403d02405e8da798e7"
+content-hash = "2a06caa4ee3e1e58883b1a787941ac7174fe3dc3734f6a3039205b1cd28524e0"
 
 [metadata.files]
 aiohttp = [
@@ -693,6 +708,10 @@ mypy-extensions = [
 nanoid = [
     {file = "nanoid-2.0.0-py3-none-any.whl", hash = "sha256:90aefa650e328cffb0893bbd4c236cfd44c48bc1f2d0b525ecc53c3187b653bb"},
     {file = "nanoid-2.0.0.tar.gz", hash = "sha256:5a80cad5e9c6e9ae3a41fa2fb34ae189f7cb420b2a5d8f82bd9d23466e4efa68"},
+]
+networkx = [
+    {file = "networkx-2.6.2-py3-none-any.whl", hash = "sha256:5fcb7004be69e8fbdf07dcb502efa5c77cadcaad6982164134eeb9721f826c2e"},
+    {file = "networkx-2.6.2.tar.gz", hash = "sha256:2306f1950ce772c5a59a57f5486d59bb9cab98497c45fc49cbc45ac0dec119bb"},
 ]
 pathspec = [
     {file = "pathspec-0.10.1-py3-none-any.whl", hash = "sha256:46846318467efc4556ccfd27816e004270a9eeeeb4d062ce5e6fc7a87c573f93"},
