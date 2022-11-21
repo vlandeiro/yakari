@@ -9,10 +9,18 @@ command-table {
 #user-input {
     align: center bottom;
     width: 100;
-    height: 3;
+    height: 1;
 }
 
-#command-selection {
+#buffer {
+    dock: bottom;
+}
+
+#dock-user-input {
+    dock: bottom
+}
+
+#transient {
     content-align: left top;
     width: auto;
     height: auto;

@@ -7,7 +7,7 @@ readme = "README.org"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-textual = {extras = ["dev"], version = "^0.2.1"}
+textual = {extras = ["dev"], version = "^0.3"}
 toml = "^0.10.2"
 attrs = "^22.1.0"
 structlog = "^22.1.0"

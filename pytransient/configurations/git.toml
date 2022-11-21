@@ -39,7 +39,7 @@ kind = "command"
 key = "c"
 base = ["git", "checkout"]
 parameters = [
-       { name = "branch_name", render = "{branch_name}" },
+       { name = "branch_name", render = "-b {branch_name}" },
        { name = "start_point", render = "{start_point}", optional = false },
 ]
 

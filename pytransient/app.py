@@ -2,28 +2,17 @@ import pkgutil
 import subprocess
 import sys
 from typing import Callable
-from uuid import uuid4
 from pathlib import Path
-import click
-import structlog
-from rich.table import Table
 from textual import events, log
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Grid
-from textual.message import Message, MessageTarget
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widget import Widget
-from textual.widgets import Button, Footer, Header, Input, TextLog
+from textual.widgets import Input, Static
 from textual import log
 
-from .action import Action, Argument
 from .models import Transient, Argument, Command, Flag
-from .config import Config
-from .state_machine import StateMachine
-
-# log = structlog.get_logger()
 
 
 class InputValueSetter(Screen):
@@ -58,17 +47,27 @@ class InputValueSetter(Screen):
 
 class TransientKeymapWidget(Widget):
     transient = reactive(Transient.empty())
-    input_buffer = reactive("")
     stack = []
 
-    def argument_value_setter(
-            self,
-            argument: Argument,
-            placeholder="value",
-            accept_null_value=True,
-            send_command=False
-    ):
+    def render(self):
+        return self.transient
 
+    def pop(self):
+        if len(self.stack):
+            self.transient = self.stack.pop(-1)
+        else:
+            self.app.exit()
+
+    def has_match(self, key):
+        return key in self.transient.keymap
+
+    def argument_value_setter(
+        self,
+        argument: Argument,
+        placeholder="value",
+        accept_null_value=True,
+        send_command=False,
+    ):
         def on_success(new_value):
             argument.value = new_value
             argument.is_active = True
@@ -81,101 +80,115 @@ class TransientKeymapWidget(Widget):
             on_success=on_success,
             on_empty=on_empty,
             placeholder=placeholder,
-            accept_null_value=accept_null_value
+            accept_null_value=accept_null_value,
         )
 
         self.app.push_screen(input_screen)
         input_screen.user_input.focus()
 
-    def on_key(self, event: events.Key) -> None:
-        key, char = event.key, event.char
+    def apply(self, key):
+        target = self.transient.keymap[key]
 
-        self.transient.highlighted_keys = set()
+        if isinstance(target, Transient):
+            self.stack.append(self.transient)
+            self.transient = target
 
-        # Backtrack to the previous state
-        if key == "ctrl+g":
-            if len(self.stack):
-                log("Tracking back")
-                self.transient = self.stack.pop(-1)
-                self.input_buffer = ""
-            else:
-                self.app.exit()
-            return
+        elif isinstance(target, Flag):
+            target.is_active = not target.is_active
 
-        if not char:
-            return
+        elif isinstance(target, Argument):
+            self.argument_value_setter(target)
 
-        self.input_buffer += char
+        elif isinstance(target, Command):
+            send_command = True
+            for parameter in target.parameters:
+                if not parameter.is_optional and not parameter.param.is_active:
+                    self.transient.highlighted_keys.add(parameter.param.key)
+                    send_command = False
 
-        # Handle matching user input
-        if self.input_buffer in self.transient.keymap:
-            target = self.transient.keymap[self.input_buffer]
+            if send_command:
+                self.app.exit(target.to_list())
 
-            if isinstance(target, Transient):
-                self.stack.append(self.transient)
-                self.transient = target
+        self.transient.disabled_keys = set()
+        log(f"Highlighted keys: {self.transient.highlighted_keys}")
 
-            elif isinstance(target, Flag):
-                target.is_active = not target.is_active
+    def disable_impossible_keys(self, input_buffer):
+        log(f"Disabling keys without '{input_buffer}' prefix")
+        # Disable keys that don't match the input buffer
+        for key in self.transient.keymap:
+            if key in self.transient.disabled_keys:
+                continue
+            if not key.startswith(input_buffer):
+                self.transient.disabled_keys.add(key)
 
-            elif isinstance(target, Argument):
-                self.argument_value_setter(target)
+        log(f"Disabled keys: {self.transient.disabled_keys}")
 
-            elif isinstance(target, Command):
-                send_command = True
-                for parameter in target.parameters:
-                    if not parameter.is_optional and not parameter.param.is_active:
-                        self.transient.highlighted_keys.add(parameter.param.key)
-                        send_command = False
+    def reset_disabled_keys(self):
+        log("Resetting disabled keys")
+        self.transient.disabled_keys = set()
 
-                if send_command:
-                    self.app.exit(target.to_list())
-
-            self.input_buffer = ""
-            self.transient.disabled_keys = set()
-
-            log(self.transient.highlighted_keys)
-        else:
-            # Disable keys that don't match the input buffer
-            for key in self.transient.keymap:
-                if key in self.transient.disabled_keys:
-                    continue
-                if not key.startswith(self.input_buffer):
-                    self.transient.disabled_keys.add(key)
-
-            # Reset input buffer and disabled keys when no remaining keys match the
-            # user input
-            if set(self.transient.keymap) == self.transient.disabled_keys:
-                self.transient.disabled_keys = set()
-                self.input_buffer = ""
-
-    def render(self):
-        return self.transient
+    def has_possible_keys(self):
+        log(f"Keymap: {set(self.transient.keymap)}")
+        log(f"Disabled keys: {self.transient.disabled_keys}")
+        result = set(self.transient.keymap) != self.transient.disabled_keys
+        log(f"Has possible keys: {result}")
+        return result
 
 
 class PyTransientApp(App):
     CSS_PATH = "vertical_layout.css"
 
-    BINDINGS = [
-        Binding(
-            key="ctrl+g",
-            key_display="CTRL+G",
-            action="do_nothing_1",
-            description="Go back / Exit",
-        ),
-    ]
+    input_buffer = reactive("")
+    transient_widget = reactive(TransientKeymapWidget())
 
-    def __init__(self, transient, *args, **kwargs):
-        self.transient = transient
-        super().__init__(*args, **kwargs)
+    def on_key(self, event: events.Key) -> None:
+        key, char = event.key, event.char
+        tw: TransientKeymapWidget = self.query_one("#transient")
+        tw.transient.highlighted_keys = set()
 
-    def on_key(self, event):
-        self.transient_widget.on_key(event)
+        # Backtrack to the previous state
+        if key == "ctrl+g":
+            log(f"Input buffer on ctrl+g: {self.input_buffer}")
+            if self.input_buffer:
+                tw.reset_disabled_keys()
+            else:
+                tw.pop()
+            self.input_buffer = ""
+
+        elif char:
+            self.input_buffer += char
+
+        tw.refresh()
+
+    def watch_input_buffer(self, new_value: str):
+        log(f"input_buffer={new_value}")
+
+        tw: TransientKeymapWidget = self.query_one("#transient")
+        buf: Static = self.query_one("#buffer")
+
+        buf.update(new_value)
+        if not new_value:
+            return
+
+        # Handle matching user input
+        if tw.has_match(self.input_buffer):
+            tw.apply(self.input_buffer)
+            self.input_buffer = ""
+
+        else:
+            tw.disable_impossible_keys(self.input_buffer)
+            if not tw.has_possible_keys():
+                tw.reset_disabled_keys()
+                self.input_buffer = ""
 
     def compose(self) -> ComposeResult:
-        """Create child widgets for the app."""
-        self.transient_widget = TransientKeymapWidget()
-        self.transient_widget.transient = self.transient
-
         yield self.transient_widget
-        yield Footer()
+        yield Static(id="buffer")
+
+
+# tw = TransientKeymapWidget(id="transient")
+# tw.transient = Transient.from_command_name("git")
+
+# app = PyTransientApp()
+# app.transient_widget = tw
+# cmd = app.run()

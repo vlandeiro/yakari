@@ -288,23 +288,23 @@ tests = ["coverage[toml]", "freezegun (>=0.2.8)", "pretend", "pytest (>=6.0)", "
 
 [[package]]
 name = "textual"
-version = "0.2.1"
+version = "0.3.0"
 description = "Modern Text User Interface framework"
 category = "main"
 optional = false
 python-versions = ">=3.7,<4.0"
 
 [package.dependencies]
-aiohttp = {version = ">=3.8.1,<4.0.0", optional = true, markers = "extra == \"dev\""}
-click = {version = "8.1.2", optional = true, markers = "extra == \"dev\""}
+aiohttp = {version = ">=3.8.1", optional = true, markers = "extra == \"dev\""}
+click = {version = ">=8.1.2", optional = true, markers = "extra == \"dev\""}
 importlib-metadata = ">=4.11.3,<5.0.0"
-msgpack = {version = ">=1.0.3,<2.0.0", optional = true, markers = "extra == \"dev\""}
-nanoid = ">=2.0.0,<3.0.0"
+msgpack = {version = ">=1.0.3", optional = true, markers = "extra == \"dev\""}
+nanoid = ">=2.0.0"
 rich = ">=12.6.0,<13.0.0"
 typing-extensions = {version = ">=4.0.0,<5.0.0", markers = "python_version < \"3.10\""}
 
 [package.extras]
-dev = ["aiohttp (>=3.8.1,<4.0.0)", "click (==8.1.2)", "msgpack (>=1.0.3,<2.0.0)"]
+dev = ["aiohttp (>=3.8.1)", "click (>=8.1.2)", "msgpack (>=1.0.3)"]
 
 [[package]]
 name = "toml"
@@ -366,7 +366,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "2a06caa4ee3e1e58883b1a787941ac7174fe3dc3734f6a3039205b1cd28524e0"
+content-hash = "680db87ef73b75aebf760deb14dae34335ef708ab18b4a419520d1c21c6d6145"
 
 [metadata.files]
 aiohttp = [
@@ -734,8 +734,8 @@ structlog = [
     {file = "structlog-22.1.0.tar.gz", hash = "sha256:94b29b1d62b2659db154f67a9379ec1770183933d6115d21f21aa25cfc9a7393"},
 ]
 textual = [
-    {file = "textual-0.2.1-py3-none-any.whl", hash = "sha256:a063a6886b4f1dd0783cd7b7dd294e692672affa9aa7c153ced606fec82439a8"},
-    {file = "textual-0.2.1.tar.gz", hash = "sha256:98c8f8fa61dfeb999029311ed362cd48acc6be2ebea0e21db7eef0fa4e3df788"},
+    {file = "textual-0.3.0-py3-none-any.whl", hash = "sha256:fa2f2e8ced8894eeee49879599bbcff0f80b7697757ef362c1f29dd3e53fd206"},
+    {file = "textual-0.3.0.tar.gz", hash = "sha256:4bc6b150e1c0f907b235a9de90b7a2dbfcdeb7637d7c5992855116aff6e547c7"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
