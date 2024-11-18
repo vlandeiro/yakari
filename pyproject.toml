@@ -1,26 +1,20 @@
-[tool.poetry]
+[project]
 name = "pytransient"
 version = "0.1.0"
-description = ""
-authors = ["Virgile Landeiro <virgile.landeiro@gmail.com>"]
-readme = "README.org"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.1.7",
+    "networkx>=3.4.2",
+    "pydantic>=2.9.2",
+    "structlog>=24.4.0",
+    "textual>=0.86.1",
+    "toml>=0.10.2",
+]
 
-[tool.poetry.dependencies]
-python = "^3.7"
-textual = {extras = ["dev"], version = "^0.3"}
-toml = "^0.10.2"
-attrs = "^22.1.0"
-structlog = "^22.1.0"
-click = "8.1.2"
-networkx = "2.6.2"
-
-[tool.poetry.group.dev.dependencies]
-black = "^22.10.0"
-isort = "^5.10.1"
-
-[tool.poetry.scripts]
-pytr = "pytransient.cli:main"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[dependency-groups]
+dev = [
+    "python-lsp-server[all]>=1.12.0",
+    "ruff>=0.7.4",
+]
