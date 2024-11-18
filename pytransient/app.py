@@ -1,194 +1,184 @@
-import pkgutil
-import subprocess
-import sys
-from typing import Callable
-from pathlib import Path
 from textual import events, log
 from textual.app import App, ComposeResult
-from textual.binding import Binding
+from textual.screen import Screen, ModalScreen
+from textual.widgets import Static, Input, OptionList
+from .configurations.uv import main_menu as uv_menu
+from .types import (
+    Menu,
+    Prefix,
+    Argument,
+    Command,
+    FlagArgument,
+    ChoiceArgument,
+    ValueArgument,
+)
+
 from textual.reactive import reactive
-from textual.screen import Screen
-from textual.widget import Widget
-from textual.widgets import Input, Static
-from textual import log
-
-from .models import Transient, Argument, Command, Flag
+from .rich_render import render_prefix, render_menu
 
 
-class InputValueSetter(Screen):
-    def __init__(self, on_success, on_empty, *args, **kwargs):
-        self.on_success = on_success
-        self.on_empty = on_empty
-        placeholder = kwargs.pop("placeholder", "value")
-        self.accept_null_value = kwargs.pop("accept_null_value", True)
-        self.user_input = Input(id="user-input", placeholder=placeholder)
-        super().__init__(*args, **kwargs)
+class ChoiceArgumentInputScreen(ModalScreen[int | None]):
+    def __init__(self, argument: ValueArgument, *args, **kwargs):
+        self.argument = argument
+        self.widget = OptionList(*argument.choices)
+        super().__init__()
 
     def compose(self) -> ComposeResult:
-        yield self.user_input
+        yield self.widget
 
     def on_key(self, event: events.Key) -> None:
         if event.key == "enter":
-            if not self.user_input.value and not self.accept_null_value:
+            self.dismiss(self.widget.highlighted)
+        elif event.key == "ctrl+g":
+            self.dismiss(None)
+
+
+class ValueArgumentInputScreen(ModalScreen[str | None]):
+    def __init__(self, argument: ValueArgument, *args, **kwargs):
+        self.argument = argument
+        self.input_widget = Input(
+            value=self.argument.value, placeholder=self.argument.name
+        )
+        super().__init__()
+
+    def compose(self) -> ComposeResult:
+        yield self.input_widget
+
+    def on_key(self, event: events.Key) -> None:
+        if event.key == "enter":
+            self.dismiss(self.input_widget.value)
+        elif event.key == "ctrl+g":
+            if self.input_widget.value:
+                self.input_widget.value = ""
+            else:
+                self.dismiss(None)
+
+
+class MenuScreen(Screen):
+    def __init__(self, menu: Menu, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.menu = menu
+
+    def compose(self) -> ComposeResult:
+        for renderable in render_menu(self.menu):
+            yield Static(renderable)
+
+    def on_key(self, event: events.Key) -> None:
+        if event.key in self.menu.prefixes.keys():
+            prefix = self.menu.prefixes[event.key]
+            self.app.push_screen(prefix.name)
+
+
+class PrefixScreen(Screen):
+    cur_input = reactive("", recompose=True)
+
+    def __init__(self, prefix: Prefix, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.prefix = prefix
+
+    def compose(self) -> ComposeResult:
+        for renderable in render_prefix(self.prefix, self.cur_input):
+            yield Static(renderable)
+
+    def on_key(self, event: events.Key) -> None:
+        if event.key == "ctrl+g":
+            if self.cur_input:
+                self.cur_input = ""
+            else:
+                self.app.pop_screen()
+
+        elif event.is_printable:
+            new_input = self.cur_input + event.character
+
+            # If we have an exact argument match, then enable it
+            if self.string_matches_argument(new_input, exact=True):
+                self.process_argument(self.prefix.arguments[new_input])
                 return
 
-            if self.user_input.value:
-                self.on_success(self.user_input.value)
+            # If we have an exact command match, then execute it
+            if self.string_matches_command(new_input, exact=True):
+                self.process_command(self.prefix.commands[new_input])
+                self.cur_input = ""
+                return
+
+            # If we have partial argument matches, then we update the current
+            # input with the new character
+            if self.string_matches_argument(new_input):
+                self.cur_input = new_input
+
+            # otherwise, we reset the current input
             else:
-                self.on_empty(self.user_input.value)
+                self.cur_input = ""
 
-            event.stop()
-            self.app.pop_screen()
+    def process_argument(self, argument: Argument):
+        match argument:
+            case FlagArgument():
+                argument.value = not argument.value
+                self.cur_input = ""
+            case ChoiceArgument():
 
-        elif event.key == "ctrl+g":
-            event.stop()
-            self.app.pop_screen()
+                def set_argument_value_and_reset_input(value: int | None):
+                    if value is None:
+                        argument.selected = None
+                    else:
+                        argument.selected = argument.choices[value]
+                    self.cur_input = ""
 
+                if argument.selected:
+                    set_argument_value_and_reset_input(None)
+                else:
+                    self.app.push_screen(
+                        ChoiceArgumentInputScreen(argument),
+                        set_argument_value_and_reset_input,
+                    )
+            case ValueArgument():
 
-class TransientKeymapWidget(Widget):
-    transient = reactive(Transient.empty())
-    stack = []
+                def set_argument_value_and_reset_input(value: str):
+                    argument.value = value
+                    self.cur_input = ""
 
-    def render(self):
-        return self.transient
+                if argument.value is not None:
+                    set_argument_value_and_reset_input(None)
+                else:
+                    self.app.push_screen(
+                        ValueArgumentInputScreen(argument),
+                        set_argument_value_and_reset_input,
+                    )
 
-    def pop(self):
-        if len(self.stack):
-            self.transient = self.stack.pop(-1)
+    def process_command(self, command: Command):
+        log(f"RUNNING: {command.template}")
+
+    def string_matches_argument(self, s: str, exact: bool = False) -> bool:
+        candidates = set(self.prefix.arguments.keys())
+        log(f"MATCHING: {s} vs {candidates} with exact={exact}")
+        if exact:
+            return s in candidates
         else:
-            self.app.exit()
+            return any(key.startswith(s) for key in self.prefix.arguments.keys())
 
-    def has_match(self, key):
-        return key in self.transient.keymap
-
-    def argument_value_setter(
-        self,
-        argument: Argument,
-        placeholder="value",
-        accept_null_value=True,
-        send_command=False,
-    ):
-        def on_success(new_value):
-            argument.value = new_value
-            argument.is_active = True
-
-        def on_empty(new_value):
-            argument.value = ""
-            argument.is_active = False
-
-        input_screen = InputValueSetter(
-            on_success=on_success,
-            on_empty=on_empty,
-            placeholder=placeholder,
-            accept_null_value=accept_null_value,
-        )
-
-        self.app.push_screen(input_screen)
-        input_screen.user_input.focus()
-
-    def apply(self, key):
-        target = self.transient.keymap[key]
-
-        if isinstance(target, Transient):
-            self.stack.append(self.transient)
-            self.transient = target
-
-        elif isinstance(target, Flag):
-            target.is_active = not target.is_active
-
-        elif isinstance(target, Argument):
-            self.argument_value_setter(target)
-
-        elif isinstance(target, Command):
-            send_command = True
-            for parameter in target.parameters:
-                if not parameter.is_optional and not parameter.param.is_active:
-                    self.transient.highlighted_keys.add(parameter.param.key)
-                    send_command = False
-
-            if send_command:
-                self.app.exit(target.to_list())
-
-        self.transient.disabled_keys = set()
-        log(f"Highlighted keys: {self.transient.highlighted_keys}")
-
-    def disable_impossible_keys(self, input_buffer):
-        log(f"Disabling keys without '{input_buffer}' prefix")
-        # Disable keys that don't match the input buffer
-        for key in self.transient.keymap:
-            if key in self.transient.disabled_keys:
-                continue
-            if not key.startswith(input_buffer):
-                self.transient.disabled_keys.add(key)
-
-        log(f"Disabled keys: {self.transient.disabled_keys}")
-
-    def reset_disabled_keys(self):
-        log("Resetting disabled keys")
-        self.transient.disabled_keys = set()
-
-    def has_possible_keys(self):
-        log(f"Keymap: {set(self.transient.keymap)}")
-        log(f"Disabled keys: {self.transient.disabled_keys}")
-        result = set(self.transient.keymap) != self.transient.disabled_keys
-        log(f"Has possible keys: {result}")
-        return result
+    def string_matches_command(self, s: str, exact: bool = False) -> bool:
+        candidates = set(self.prefix.commands.keys())
+        if exact:
+            return s in candidates
+        else:
+            return any(key.startswith(s) for key in self.prefix.commands.keys())
 
 
 class PyTransientApp(App):
-    CSS_PATH = "vertical_layout.css"
+    def __init__(self, menu, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.menu = menu
 
-    input_buffer = reactive("")
-    transient_widget = reactive(TransientKeymapWidget())
+    def on_mount(self) -> None:
+        for key, prefix in self.menu.prefixes.items():
+            log(f"Mounting screen for key {key}: {prefix.name}")
+            self.install_screen(PrefixScreen(prefix), prefix.name)
+            self.push_screen(prefix.name)
 
-    def on_key(self, event: events.Key) -> None:
-        key, char = event.key, event.char
-        tw: TransientKeymapWidget = self.query_one("#transient")
-        tw.transient.highlighted_keys = set()
-
-        # Backtrack to the previous state
-        if key == "ctrl+g":
-            log(f"Input buffer on ctrl+g: {self.input_buffer}")
-            if self.input_buffer:
-                tw.reset_disabled_keys()
-            else:
-                tw.pop()
-            self.input_buffer = ""
-
-        elif char:
-            self.input_buffer += char
-
-        tw.refresh()
-
-    def watch_input_buffer(self, new_value: str):
-        log(f"input_buffer={new_value}")
-
-        tw: TransientKeymapWidget = self.query_one("#transient")
-        buf: Static = self.query_one("#buffer")
-
-        buf.update(new_value)
-        if not new_value:
-            return
-
-        # Handle matching user input
-        if tw.has_match(self.input_buffer):
-            tw.apply(self.input_buffer)
-            self.input_buffer = ""
-
-        else:
-            tw.disable_impossible_keys(self.input_buffer)
-            if not tw.has_possible_keys():
-                tw.reset_disabled_keys()
-                self.input_buffer = ""
-
-    def compose(self) -> ComposeResult:
-        yield self.transient_widget
-        yield Static(id="buffer")
+        menu_screen = MenuScreen(self.menu)
+        self.install_screen(menu_screen, self.menu.name)
+        self.push_screen(self.menu.name)
 
 
-# tw = TransientKeymapWidget(id="transient")
-# tw.transient = Transient.from_command_name("git")
-
-# app = PyTransientApp()
-# app.transient_widget = tw
-# cmd = app.run()
+app = PyTransientApp(uv_menu)
+# app.run()

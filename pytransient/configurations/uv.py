@@ -35,16 +35,18 @@ dependency_mgmt_prefix = Prefix(
         ),
         "-g": ValueArgument(
             name="--group", value_type=str, template="{self.name} {self.value}"
-        )
+        ),
     },
     commands={
         "a": Command(
             name="add",
+            description="Add dependencies to the project",
             template="uv add {self.resolved_arguments} {self.dynamic_arguments}",
             dynamic_arguments=[package_argument],
         ),
         "r": Command(
             name="remove",
+            description="Remove dependencies from the project",
             template="uv remove {self.resolved_arguments} {self.dynamic_arguments}",
             dynamic_arguments=[package_argument],
         ),
@@ -53,9 +55,10 @@ dependency_mgmt_prefix = Prefix(
 main_menu = Menu(
     name="uv",
     prefixes={
-        "p": python_version_prefix,
         "d": dependency_mgmt_prefix,
+        "p": python_version_prefix,
     },
 )
 
-pprint(main_menu.model_dump())
+if __name__ == "__main__":
+    pprint(main_menu.model_dump())

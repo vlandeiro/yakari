@@ -5,8 +5,7 @@ and complete menu structures in a type-safe way.
 """
 
 from pydantic import BaseModel, Field
-from typing import Dict, List, Tuple, Type
-
+from typing import Dict, List, Type
 
 Shortcut = str
 
@@ -15,22 +14,35 @@ class Argument(BaseModel):
     name: str
     template: str
     visible: bool = True
-    enabled: bool = False
+    description: str = ""
 
 
 class FlagArgument(Argument):
     template: str = "{self.name}"
+    value: bool = False
+
+    @property
+    def enabled(self):
+        return self.value
 
 
 class ChoiceArgument(Argument):
     choices: List[str]
     selected: str | None = None
 
+    @property
+    def enabled(self):
+        return self.selected is not None
+
 
 class ValueArgument(Argument):
     template: str = "{self.value}"
     value_type: Type
     value: str | None = None
+
+    @property
+    def enabled(self):
+        return self.value is not None
 
 
 class Command(BaseModel):
@@ -40,7 +52,9 @@ class Command(BaseModel):
     Attributes:
         template (str): The templated command to execute when this action runs
     """
+
     name: str
+    description: str = ""
     template: str
     dynamic_arguments: List[Argument] = Field(default_factory=list)
 
