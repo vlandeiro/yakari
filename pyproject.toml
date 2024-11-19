@@ -12,6 +12,7 @@ dependencies = [
     "structlog>=24.4.0",
     "textual>=0.86.1",
     "toml>=0.10.2",
+    "typing-extensions>=4.12.2",
 ]
 
 [dependency-groups]

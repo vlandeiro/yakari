@@ -1,0 +1,26 @@
+ModalScreen Label {
+    background: $background-lighten-1;
+}
+
+ModalScreen Horizontal {
+    dock: bottom;
+    height: auto;
+}
+
+ModalScreen Input {
+    border: none;
+    height: auto;
+    margin: 0;
+    padding: 0;
+}
+
+ModalScreen OptionList {
+    dock: bottom;
+    margin: 0;
+    border: none;
+}
+
+.main-screen {
+    padding: 1 1;
+    border: none;
+}

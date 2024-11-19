@@ -16,12 +16,20 @@ python_version_prefix = Prefix(
     commands={
         "i": Command(
             name="install",
-            template="uv python install {self.resolved_arguments} {self.dynamic_arguments}",
+            template=[
+                "uv",
+                "python",
+                "install",
+                "{resolved_arguments}",
+                "{dynamic_arguments}",
+            ],
             dynamic_arguments=[
                 ValueArgument(name="targets", value_type=str),
             ],
         ),
-        "l": Command(name="list", template="uv python list {self.resolved_arguments}"),
+        "l": Command(
+            name="list", template=["uv", "python", "list", "{resolved_arguments}"]
+        ),
     },
 )
 
@@ -41,13 +49,13 @@ dependency_mgmt_prefix = Prefix(
         "a": Command(
             name="add",
             description="Add dependencies to the project",
-            template="uv add {self.resolved_arguments} {self.dynamic_arguments}",
+            template=["uv", "add" "{resolved_arguments}", "{dynamic_arguments}"],
             dynamic_arguments=[package_argument],
         ),
         "r": Command(
             name="remove",
             description="Remove dependencies from the project",
-            template="uv remove {self.resolved_arguments} {self.dynamic_arguments}",
+            template=["uv", "remove", "{resolved_arguments}", "{dynamic_arguments}"],
             dynamic_arguments=[package_argument],
         ),
     },

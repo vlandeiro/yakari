@@ -38,11 +38,11 @@ def render_argument(argument: Argument) -> str:
             return argument.name
         case ChoiceArgument():
             choices_str = " | ".join(argument.choices)
-            choices_str = f"( {choices_str} )"
+            choices_str = f"[ {choices_str} ]"
             if argument.selected:
                 choices_str = Text(choices_str)
                 choices_str.highlight_words([f" {argument.selected} "], HIGHLIGHT_STYLE)
-            return Text.assemble(argument.name, " ", choices_str)
+            return Text.assemble(argument.name, "=", choices_str)
         case ValueArgument():
             if argument.value is None:
                 argument_repr = ""
