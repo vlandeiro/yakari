@@ -1,7 +1,7 @@
 """
 A module for defining menu structure and commands using Pydantic models.
 This module provides classes to represent actions, commands, command groups,
-and complete menu structures in a type-safe way.
+and complete menu structures in a type-safe way using Pydantic data validation.
 """
 
 import os
@@ -14,6 +14,8 @@ from pydantic import BaseModel, Field, PrivateAttr
 
 
 class Deferred(BaseModel):
+    """A class representing a deferred value that will be evaluated at runtime from a variable."""
+
     varname: str
 
     def evaluate(self, context=None):
@@ -22,6 +24,8 @@ class Deferred(BaseModel):
 
 
 class History(BaseModel):
+    """A class managing command history with navigation capabilities."""
+
     values: Deque[str] = Field(default_factory=deque)
     cur_pos: int | None = None
 
@@ -67,14 +71,28 @@ class History(BaseModel):
 
 
 class MatchResult(BaseModel):
+    """
+    Represents the result of a command/argument matching operation.
+
+    Attributes:
+        exact_match (str | None): The exact match found, if any
+        partial_matches (List[str]): List of partial matches found
+    """
+
     exact_match: str | None = None
     partial_matches: List[str] = Field(default_factory=list)
 
 
-Shortcut = str
-
-
 class Argument(BaseModel):
+    """
+    Base class for all command arguments, providing common functionality.
+
+    Attributes:
+        template (str | None): A templated python string to render the argument.
+        description (str): A short description explaining the argument's purpose
+        group (str | None): The name of the group this argument belongs to
+    """
+
     template: str | None = Field(
         default=None,
         description=(
@@ -94,6 +112,14 @@ class Argument(BaseModel):
 
 
 class FlagArgument(Argument):
+    """
+    Represents a flag-style command argument that can be enabled or disabled.
+
+    Attributes:
+        flag (str): The flag string (e.g. '--verbose')
+        on (bool): Whether the flag is enabled
+    """
+
     flag: str
     template: str = "{self.flag}"
     on: bool = Field(
@@ -106,6 +132,15 @@ class FlagArgument(Argument):
 
 
 class ChoiceArgument(Argument):
+    """
+    Represents a command argument that must be chosen from a predefined set of values.
+
+    Attributes:
+        name (str): Name of the argument
+        choices (List[str]): Available values to choose from
+        selected (str | None): Currently selected value
+    """
+
     name: str
     choices: List[str] = Field(
         description="A list of available values for this argument."
@@ -124,6 +159,14 @@ class ChoiceArgument(Argument):
 
 
 class ValueArgument(Argument):
+    """
+    Represents a command argument that accepts an arbitrary value.
+
+    Attributes:
+        name (str): Name of the argument
+        value (str | None): The argument's value
+    """
+
     name: str
     value: str | None = Field(default=None, description="The value for this argument.")
     _history: List[str] = PrivateAttr(default_factory=History)
@@ -156,15 +199,21 @@ ArgumentImpl = FlagArgument | ValueArgument | ChoiceArgument
 
 class Command(BaseModel):
     """
-    Represents a command with an associated shortcut and action.
+    Represents a command with configurable arguments and template-based execution.
 
     Attributes:
-        template (str): The templated command to execute when this action runs
+        name (str): Unique identifier/name for the command
+        description (str): Optional description explaining the command's purpose
+        template (List[str | Deferred | ArgumentImpl]): List of components that make up the
+            command, can include raw strings, deferred values, and various argument types
     """
 
     name: str
     description: str = ""
     template: List[str | Deferred | ArgumentImpl]
+
+
+Shortcut = str
 
 
 class Menu(BaseModel):
@@ -173,7 +222,9 @@ class Menu(BaseModel):
 
     Attributes:
         name (str): The name of the menu
-        commands (List[Command]): A list of commands belonging to this group
+        arguments (Dict[Shortcut, ArgumentImpl]): Available arguments mapped by shortcuts
+        menus (Dict[Shortcut, Menu]): Sub-menus mapped by shortcuts
+        commands (Dict[Shortcut, Command]): Available commands mapped by shortcuts
     """
 
     name: str
