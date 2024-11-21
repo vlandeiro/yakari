@@ -1,6 +1,8 @@
+<img src="./static/yakari.png" width="150" align="left" />
+
 # Yakari
 
-![yakari logo](./static/yakari.png | width=150)
+Yakari is an interactive command generation tool. It aims to recreate the experience from Emacs's transient package.
 
 ## Motivation
 
