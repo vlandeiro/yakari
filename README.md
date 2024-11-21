@@ -1,6 +1,6 @@
 # Yakari
 
-![yakari logo](./static/yakari.png)
+![yakari logo](./static/yakari.png | width=150)
 
 ## Motivation
 
