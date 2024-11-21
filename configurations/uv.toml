@@ -1,0 +1,23 @@
+name = "uv"
+
+[commands]
+u = { name="update", template=["uv", "self", "update"] }
+
+[menus.d]
+name = "Dependency management"
+
+[menus.d.arguments]
+"-d" = { flag="--dev", description="Add/remove the requirements to the development dependency group." }
+"-o" = { name="--optional", description="Add/remove the requirements to the package's optional dependencies for the specified extra." }
+"-e" = { flag="--editable", description="Add the requirements as editable." }
+"-E" = { name="--extra", description="Extras to enable for the dependency." }
+"-U" = { flag="--upgrade", description="Allow package upgrades."}
+
+[menus.d.commands.a]
+name = "add"
+template = [
+         "uv",
+         "add",
+         { varname = "optional_arguments" },
+         { name="target" }
+]

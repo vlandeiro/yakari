@@ -1,0 +1,38 @@
+name = "git"
+
+[menus.c]
+name = "Commit"
+
+[menus.c.arguments]
+"-R" = { flag="--reset-author" }
+
+[menus.c.commands.c]
+name = "commit"
+template = [
+    "git",
+    "commit",
+    { name="-m", template='{self.name} "{self.value}"' },
+]
+
+[menus.c.commands.w]
+name = "reword"
+template = [ "git", "commit", "--amend", "--only", "--allow-empty" ]
+
+[menus.l]
+name = "Show commit logs"
+
+[menus.l.arguments]
+"-d" = { flag="--decorate" }
+"-g" = { flag="--graph", on=true }
+"-o" = { flag="--oneline", on=true }
+"-n" = { name="--max-count", template="{self.name}={self.value}" }
+
+[menus.l.commands.a]
+name = "all"
+description = "Show commit logs for all branches"
+template=[ "git", "log", "--branches=*", { varname="optional_arguments" } ]
+
+[menus.l.commands.l]
+name = "current"
+description = "Show commit logs for the current branch"
+template=["git", "log", { varname="optional_arguments" }]

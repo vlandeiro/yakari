@@ -1,20 +1,22 @@
-* Transient CLI in Python
+* Yakari
 :PROPERTIES:
-:header-args:python: :session pytransient :kernel python3 :display plain
+:header-args:python: :session yakari :kernel python3 :display plain
 :END:
 
 ** Motivation
 
--   Magit is an awesome tool to interact with git in emacs
--   It has a great interface using transient states
--   It relies on the `transient` library in emacs (https://magit.vc/manual/transient/)
--   Emacs is not used by everyone and there are no libraries implementing similar transient CLIs in python
+- Magit is a tool to interact with ~git~ in emacs.
+- Its interface lets users use ~git~ and discover new features.
+- It relies on the ~transient~ library, an [[https://magit.vc/manual/transient/][Emacs package]] written in Emacs Lisp
+  (https://magit.vc/manual/transient/).
+- Emacs is not used by everyone and I could not find existing tools that
+  reproduced the same behavior outside of Emacs.
 
 ** Definition
 
--   pytransient is a command generator toolterminal
--   pytransient wraps around existing CLI
--   pytransient is not a replacement for click, fire, docopt, argparse, etc
+- yakari is a command generator and command invoker
+- yakari calls existing CLIs
+- yakari is not a replacement for click, fire, docopt, argparse, etc
 
 ** Architecture
 

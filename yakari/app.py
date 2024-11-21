@@ -1,23 +1,21 @@
 from textual import events, log, work
 from textual.app import App, ComposeResult
-from textual.screen import Screen, ModalScreen
-from textual.widgets import Static, Input, OptionList, Label
-from textual.containers import Container
 from textual.containers import Horizontal
-from .configurations.uv import main_menu as uv_menu
+from textual.reactive import reactive
+from textual.screen import ModalScreen, Screen
+from textual.widgets import Input, Label, OptionList, Static
+
+from .configurations._base import Deferred
+from .rich_render import render_menu
 from .types import (
-    Menu,
-    Prefix,
     Argument,
+    ChoiceArgument,
     Command,
     FlagArgument,
-    ChoiceArgument,
+    MatchResult,
+    Menu,
     ValueArgument,
 )
-import subprocess
-from textual.reactive import reactive
-from .rich_render import render_prefix, render_menu
-import sys
 
 
 class ChoiceArgumentInputScreen(ModalScreen[int | None]):
@@ -35,6 +33,7 @@ class ChoiceArgumentInputScreen(ModalScreen[int | None]):
                 self.dismiss(self.widget.highlighted)
             case "ctrl+g":
                 self.dismiss(None)
+                event.stop()
 
 
 class ValueArgumentInputScreen(ModalScreen[str | None]):
@@ -46,7 +45,6 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         super().__init__()
 
     def compose(self) -> ComposeResult:
-        # yield self.input_widget
         yield Horizontal(self.label_widget, self.input_widget)
 
     def on_key(self, event: events.Key) -> None:
@@ -59,6 +57,7 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
                     self.argument._history.restart()
                 else:
                     self.dismiss(None)
+                    event.stop()
             case "down":
                 if (prev_value := self.argument._history.prev) and (
                     prev_value is not None
@@ -72,68 +71,81 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
 
 
 class MenuScreen(Screen):
-    def __init__(self, menu: Menu):
-        super().__init__(classes="main-screen")
-        self.menu = menu
+    BINDINGS = [
+        ("ctrl+g", "reset_or_pop", "Reset input / Go back"),
+        ("tab", "complete_input", "Autocomplete"),
+        ("backspace", "backspace_input", "Erase last character"),
+    ]
 
-    def compose(self) -> ComposeResult:
-        for renderable in render_menu(self.menu):
-            yield Static(renderable)
-
-    def on_key(self, event: events.Key) -> None:
-        if event.key in self.menu.prefixes.keys():
-            prefix = self.menu.prefixes[event.key]
-            self.app.push_screen(prefix.name)
-        elif event.key == "ctrl+g":
-            self.app.exit()
-
-
-class PrefixScreen(Screen):
     cur_input = reactive("", recompose=True)
 
-    def __init__(self, prefix: Prefix):
+    def __init__(self, menu: Menu, is_entrypoint: bool = False):
         super().__init__(classes="main-screen")
-        self.prefix = prefix
+        self.menu = menu
+        self.is_entrypoint = is_entrypoint
+        self.candidates = {**menu.arguments, **menu.menus, **menu.commands}
 
     def compose(self) -> ComposeResult:
-        for renderable in render_prefix(self.prefix, self.cur_input):
+        for renderable in render_menu(self.menu, self.cur_input):
             yield Static(renderable)
+
+    def action_reset_or_pop(self):
+        if self.cur_input:
+            self.cur_input = ""
+        elif self.is_entrypoint:
+            self.app.exit()
+        else:
+            self.app.pop_screen()
+
+    def action_backspace_input(self):
+        if self.cur_input:
+            self.cur_input = self.cur_input[:-1]
+
+    @work
+    async def action_complete_input(self):
+        # If we have only one remaining matching argument and we hit tab,
+        # complete the current input and process the argument
+        match_results = self.string_matches_candidates(self.cur_input)
+
+        if len(match_results.partial_matches) == 1:
+            self.cur_input = match_results.partial_matches[0]
+            await self.process_match(self.candidates[self.cur_input])
 
     @work
     async def on_key(self, event: events.Key) -> None:
-        if event.key == "ctrl+g":
-            if self.cur_input:
-                self.cur_input = ""
-            else:
-                self.app.pop_screen()
-
-        elif event.is_printable:
+        if event.is_printable:
             new_input = self.cur_input + event.character
 
-            # If we have an exact argument match, then enable it
-            if self.string_matches_argument(new_input, exact=True):
-                await self.process_argument(self.prefix.arguments[new_input])
-                return
+            match_results = self.string_matches_candidates(new_input)
 
-            # If we have an exact command match, then execute it
-            if self.string_matches_command(new_input, exact=True):
-                await self.process_command(self.prefix.commands[new_input])
-                self.cur_input = ""
-                return
+            # If we have an exact match, then process it
+            if match_results.exact_match is not None:
+                await self.process_match(self.candidates[new_input])
 
-            # If we have partial argument matches, then we update the current
+            # If we have partial matches, then we update the current
             # input with the new character
-            if self.string_matches_argument(new_input):
+            elif match_results.partial_matches:
                 self.cur_input = new_input
 
             # otherwise, we reset the current input
             else:
                 self.cur_input = ""
 
+    async def process_match(self, match_value: Argument | Command | Menu):
+        match match_value:
+            case Argument():
+                await self.process_argument(match_value)
+            case Command():
+                command_result = await self.process_command(match_value)
+                if command_result is None:
+                    return
+            case Menu():
+                await self.process_menu(match_value)
+
     async def process_argument(self, argument: Argument):
         match argument:
             case FlagArgument():
-                argument.value = not argument.value
+                argument.on = not argument.on
                 self.cur_input = ""
             case ChoiceArgument():
 
@@ -167,63 +179,63 @@ class PrefixScreen(Screen):
                     set_argument_value_and_reset_input(new_value)
 
     async def process_command(self, command: Command):
-        resolved_arguments_list = []
-        for key, argument in self.prefix.arguments.items():
-            if not argument.enabled:
-                continue
-            resolved_arguments_list.append(argument.render_template())
-        resolved_arguments = " ".join(resolved_arguments_list)
+        optional_arguments = []
+        all_arguments = {**self.menu._ancestors_arguments, **self.menu.arguments}
+        for key, argument in all_arguments.items():
+            if argument.enabled:
+                optional_arguments.append(argument.render_template())
 
-        dynamic_arguments_list = []
-        for argument in command.dynamic_arguments:
-            await self.process_argument(argument)
-            dynamic_arguments_list.append(argument.render_template())
-        dynamic_arguments = " ".join(dynamic_arguments_list)
+        resolved_command = []
+        for part in command.template:
+            match part:
+                case str():
+                    resolved_command.append(part)
+                case Argument():
+                    await self.process_argument(part)
+                    if not part.enabled:
+                        return
+                    resolved_command.append(part.render_template())
+                case Deferred():
+                    resolved_command.extend(part.evaluate(locals()))
 
-        command_template_str = " ".join(command.template)
-        command_str = command_template_str.format(
-            resolved_arguments=resolved_arguments, dynamic_arguments=dynamic_arguments
-        )
+        command_str = " ".join(resolved_command)
+
         self.app.command = command_str
-        self.app.exit()
+        self.app.exit(resolved_command)
 
-    def string_matches_argument(self, s: str, exact: bool = False) -> bool:
-        candidates = set(self.prefix.arguments.keys())
-        log(f"MATCHING: {s} vs {candidates} with exact={exact}")
-        if exact:
-            return s in candidates
+    async def process_menu(self, menu: Menu):
+        menu._ancestors_arguments = self.menu.arguments
+        await self.app.push_screen_wait(MenuScreen(menu))
+        self.cur_input = ""
+
+    def string_matches_candidates(self, s: str) -> MatchResult:
+        candidates_set = set(self.candidates)
+        exact_match = None
+        partial_matches = []
+        if s in candidates_set:
+            exact_match = s
         else:
-            return any(key.startswith(s) for key in self.prefix.arguments.keys())
-
-    def string_matches_command(self, s: str, exact: bool = False) -> bool:
-        candidates = set(self.prefix.commands.keys())
-        if exact:
-            return s in candidates
-        else:
-            return any(key.startswith(s) for key in self.prefix.commands.keys())
+            partial_matches = [key for key in candidates_set if key.startswith(s)]
+        return MatchResult(exact_match=exact_match, partial_matches=partial_matches)
 
 
-class PyTransientApp(App):
+class YakariApp(App):
     CSS_PATH = "app.css"
 
-    def __init__(self, menu, *args, **kwargs):
+    BINDINGS = [
+        ("ctrl+g", "quit", "Exit"),
+    ]
+
+    def __init__(self, command_name, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.menu = menu
+        self.menu = Menu.from_toml(command_name)
         self.command = None
 
     def on_mount(self) -> None:
-        for key, prefix in self.menu.prefixes.items():
-            log(f"Mounting screen for key {key}: {prefix.name}")
-            self.install_screen(PrefixScreen(prefix), prefix.name)
-            self.push_screen(prefix.name)
-
-        menu_screen = MenuScreen(self.menu)
+        menu_screen = MenuScreen(self.menu, is_entrypoint=True)
+        log(f"Menu: {self.menu}")
         self.install_screen(menu_screen, self.menu.name)
         self.push_screen(self.menu.name)
 
-    def on_unmount(self):
-        if self.command is not None:
-            print(self.command, file=sys.__stdout__, flush=True)
 
-
-app = PyTransientApp(uv_menu)
+app = YakariApp("uv")
