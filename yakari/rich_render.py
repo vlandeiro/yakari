@@ -27,14 +27,32 @@ HIGHLIGHT_STYLE = Style(color="green", bold=True)
 
 
 def should_dim(key: str, user_input: str) -> str:
+    """
+    Determine if a key should be dimmed based on user input.
+
+    Args:
+        key: The key to check
+        user_input: The current user input string
+
+    Returns:
+        bool: True if the key should be dimmed, False otherwise
+    """
     return not key.startswith(user_input)
 
 
-def render_command(command: Command) -> str:
-    return [command.name, command.description]
-
-
 def render_value(value: str | None) -> str:
+    """
+    Convert a value to its string representation for display.
+
+    Args:
+        value: The value to render, can be None or a string
+
+    Returns:
+        str: The rendered string representation of the value:
+            - Empty string for None
+            - Quoted empty string for ""
+            - Original value otherwise
+    """
     if value is None:
         return ""
     elif value == "":  # special case for a valid empty string input
@@ -43,30 +61,54 @@ def render_value(value: str | None) -> str:
         return value
 
 
-def render_argument(argument: Argument) -> str:
+def render_argument(argument: Argument) -> Tuple[str | Text, str | Text]:
+    """
+    Render an argument into a displayable format.
+
+    Args:
+        argument: The Argument object to render (FlagArgument, ChoiceArgument, or ValueArgument)
+
+    Returns:
+        Tuple[str | Text, str | Text]: A tuple containing:
+            - The rendered argument name/value
+            - The rendered description with optional formatting
+
+    Raises:
+        ValueError: If the argument type is not supported
+    """
     match argument:
         case FlagArgument():
-            return [argument.flag, argument.description]
+            return (argument.flag, argument.description)
         case ChoiceArgument():
             choices_str = " | ".join(argument.choices)
             choices_str = f"[ {choices_str} ]"
             if argument.selected:
                 choices_str = Text(choices_str)
                 choices_str.highlight_words([f" {argument.selected} "], HIGHLIGHT_STYLE)
-            return [
+            return (
                 Text.assemble(argument.name, "=", argument.selected or ""),
                 Text.assemble(argument.description, " ", choices_str),
-            ]
+            )
         case ValueArgument():
-            return [
+            return (
                 f"{argument.name}={render_value(argument.value)}",
                 argument.description,
-            ]
+            )
         case _:
             raise ValueError(f"{argument} of type {type(argument)} is not supported.")
 
 
-def render_key(key: str, user_input: str) -> str:
+def render_key(key: str, user_input: str) -> Text:
+    """
+    Render a key with optional styling.
+
+    Args:
+        key (str): The key to render
+        user_input: The current user input string
+
+    Returns:
+        Union[Text, str]: Rendered key text with applied style
+    """
     if user_input:
         if key.startswith(user_input):
             key = Text.assemble(
@@ -91,7 +133,24 @@ def group_arguments(
 
 def render_arguments_group(
     group_name: str, arguments: List[Tuple[Shortcut, Argument]], user_input: str
-):
+) -> Padding:
+    """
+    Render a group of arguments as a formatted table with styling based on argument state.
+
+    Args:
+        group_name (str): Title of the argument group to be displayed
+        arguments (List[Tuple[Shortcut, Argument]]): List of tuples containing shortcuts and their
+            corresponding arguments to be rendered
+        user_input (str): Current user input string used for determining styling
+
+    Returns:
+        Padding: A Rich Padding object containing the formatted table with proper spacing
+
+    Note:
+        The table includes columns for key, name, and description with appropriate styling:
+        - Enabled arguments use ENABLED_STYLE
+        - Dimmed arguments (based on user input) use DIM_STYLE
+    """
     table = Table(
         "key", "name", Column("desc", max_width=80), title=group_name, **TABLE_CONFIG
     )
@@ -108,6 +167,24 @@ def render_arguments_group(
 
 
 def render_menu(menu: Menu, user_input: str):
+    """
+    Generate a complete menu rendering including title, subcommands, arguments, and commands.
+
+    Args:
+        menu (Menu): Menu object containing all elements to be rendered
+        user_input (str): Current user input string used for styling and filtering
+
+    Yields:
+        Union[Text, Padding]: A sequence of Rich components representing different parts of the menu:
+            - Menu title as Text
+            - Subcommands table as Padding (if menu.menus exists)
+            - Argument groups as Padding (if menu.arguments exists)
+            - Commands table as Padding (if menu.commands exists)
+
+    Note:
+        Each section (subcommands, arguments, commands) is rendered in a separate table
+        with appropriate formatting and column configurations defined in TABLE_CONFIG
+    """
     yield Text(menu.name, style="bold")
     if menu.menus:
         table = Table("key", "prefix", title="Subcommands", **TABLE_CONFIG)
@@ -130,5 +207,5 @@ def render_menu(menu: Menu, user_input: str):
         )
         for key, command in menu.commands.items():
             log(f"Render command {key}: {command}")
-            table.add_row(key, *render_command(command))
+            table.add_row(key, command.name, command.description)
         yield Padding(table, TABLE_PADDING)

@@ -19,7 +19,13 @@ from .types import (
 
 
 class ChoiceArgumentInputScreen(ModalScreen[int | None]):
-    def __init__(self, argument: ValueArgument, *args, **kwargs):
+    """A modal screen for selecting from a list of choices for an argument.
+
+    Args:
+        argument (ValueArgument): The argument containing the choices
+    """
+
+    def __init__(self, argument: ValueArgument):
         self.argument = argument
         self.widget = OptionList(*argument.choices)
         super().__init__()
@@ -37,7 +43,13 @@ class ChoiceArgumentInputScreen(ModalScreen[int | None]):
 
 
 class ValueArgumentInputScreen(ModalScreen[str | None]):
-    def __init__(self, argument: ValueArgument, *args, **kwargs):
+    """A modal screen for entering a value for an argument.
+
+    Args:
+        argument (ValueArgument): The argument to get input for
+    """
+
+    def __init__(self, argument: ValueArgument):
         self.argument = argument
         self.argument._history.restart()
         self.label_widget = Label(f"{self.argument.name}=")
@@ -71,6 +83,12 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
 
 
 class MenuScreen(Screen):
+    """Main screen showing the menu interface and handling user input.
+
+    Attributes:
+        cur_input (reactive): Current user input string
+    """
+
     BINDINGS = [
         ("ctrl+g", "reset_or_pop", "Reset input / Go back"),
         ("tab", "complete_input", "Autocomplete"),
@@ -90,6 +108,11 @@ class MenuScreen(Screen):
             yield Static(renderable)
 
     def action_reset_or_pop(self):
+        """Reset current input or pop screen if no input.
+
+        If there is current input, clear it. Otherwise, exit app if at entrypoint
+        or pop the screen if in a submenu.
+        """
         if self.cur_input:
             self.cur_input = ""
         elif self.is_entrypoint:
@@ -98,11 +121,14 @@ class MenuScreen(Screen):
             self.app.pop_screen()
 
     def action_backspace_input(self):
+        """Remove the last character from current input."""
         if self.cur_input:
             self.cur_input = self.cur_input[:-1]
 
     @work
     async def action_complete_input(self):
+        """Handle tab completion of current input."""
+
         # If we have only one remaining matching argument and we hit tab,
         # complete the current input and process the argument
         match_results = self.string_matches_candidates(self.cur_input)
@@ -113,6 +139,17 @@ class MenuScreen(Screen):
 
     @work
     async def on_key(self, event: events.Key) -> None:
+        """Handle key press events.
+
+        Args:
+            event (events.Key): The key press event
+
+        Handles printable characters by:
+        - Processing exact matches immediately
+        - Adding character to input if there are partial matches
+        - Resetting input if no matches
+        """
+
         if event.is_printable:
             new_input = self.cur_input + event.character
 
@@ -132,6 +169,11 @@ class MenuScreen(Screen):
                 self.cur_input = ""
 
     async def process_match(self, match_value: Argument | Command | Menu):
+        """Process a matched menu item based on its type.
+
+        Args:
+            match_value: The matched argument, command or submenu
+        """
         match match_value:
             case Argument():
                 await self.process_argument(match_value)
@@ -143,6 +185,16 @@ class MenuScreen(Screen):
                 await self.process_menu(match_value)
 
     async def process_argument(self, argument: Argument):
+        """Handle processing of different argument types.
+
+        Args:
+            argument (Argument): The argument to process
+
+        Handles:
+        - Toggling flag arguments
+        - Getting choice selection from modal
+        - Getting value input from modal
+        """
         match argument:
             case FlagArgument():
                 argument.on = not argument.on
@@ -179,6 +231,15 @@ class MenuScreen(Screen):
                     set_argument_value_and_reset_input(new_value)
 
     async def process_command(self, command: Command):
+        """Process a command by resolving its template and arguments.
+
+        Args:
+            command (Command): The command to process
+
+        Resolves the command template with argument values and exits app
+        with the final command.
+        """
+
         optional_arguments = []
         all_arguments = {**self.menu._ancestors_arguments, **self.menu.arguments}
         for key, argument in all_arguments.items():
@@ -204,11 +265,25 @@ class MenuScreen(Screen):
         self.app.exit(resolved_command)
 
     async def process_menu(self, menu: Menu):
+        """Process a submenu by pushing a new menu screen.
+
+        Args:
+            menu (Menu): The submenu to display
+        """
+
         menu._ancestors_arguments = self.menu.arguments
         await self.app.push_screen_wait(MenuScreen(menu))
         self.cur_input = ""
 
     def string_matches_candidates(self, s: str) -> MatchResult:
+        """Find matches for input string against available options.
+
+        Args:
+            s (str): Input string to match
+
+        Returns:
+            MatchResult: Contains exact and partial matches found
+        """
         candidates_set = set(self.candidates)
         exact_match = None
         partial_matches = []
@@ -220,6 +295,8 @@ class MenuScreen(Screen):
 
 
 class YakariApp(App):
+    """Main application class for Yakari command-line interface."""
+
     CSS_PATH = "app.css"
 
     BINDINGS = [
