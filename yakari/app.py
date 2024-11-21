@@ -5,12 +5,12 @@ from textual.reactive import reactive
 from textual.screen import ModalScreen, Screen
 from textual.widgets import Input, Label, OptionList, Static
 
-from .configurations._base import Deferred
 from .rich_render import render_menu
 from .types import (
     Argument,
     ChoiceArgument,
     Command,
+    Deferred,
     FlagArgument,
     MatchResult,
     Menu,
@@ -236,6 +236,3 @@ class YakariApp(App):
         log(f"Menu: {self.menu}")
         self.install_screen(menu_screen, self.menu.name)
         self.push_screen(self.menu.name)
-
-
-app = YakariApp("uv")

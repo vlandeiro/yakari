@@ -1,9 +1,8 @@
-* Yakari
-:PROPERTIES:
-:header-args:python: :session yakari :kernel python3 :display plain
-:END:
+# Yakari
 
-** Motivation
+![yakari logo](./static/yakari.png)
+
+## Motivation
 
 - Magit is a tool to interact with ~git~ in emacs.
 - Its interface lets users use ~git~ and discover new features.
@@ -12,25 +11,8 @@
 - Emacs is not used by everyone and I could not find existing tools that
   reproduced the same behavior outside of Emacs.
 
-** Definition
+## Definition
 
 - yakari is a command generator and command invoker
 - yakari calls existing CLIs
 - yakari is not a replacement for click, fire, docopt, argparse, etc
-
-** Architecture
-
-*** Language
-#+begin_example
-- action: <command> <arguments>
-- arguments: <argument>...
-- argument: <named argument>
-          | <positional argument>
-          | <action>
-#+end_example
-
-** Roadmap
-
-*** P0
-- read configuration file with command ~pytr <command>~ (e.g. ~pytr git~ would open the ~git.json~ configuration).
-- handle positional arguments
