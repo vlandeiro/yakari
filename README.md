@@ -2,24 +2,77 @@
 
 <img src="./static/yakari.png" width="220" align="right" />
 
-Yakari is an interactive command generation tool. Its user-interface is heavily
-inspired by [transient](https://magit.vc/manual/transient/), an Emacs package to
-build interactive menus.
+Transform complex command-line interfaces into guided, interactive experiences. Yakari
+helps users build commands step by step, making CLI tools more accessible and
+user-friendly through contextual assistance.
 
-Building a Yakari menu lets users discover CLI features interactively. This can
-be used for any CLI installed on the user's machine but is particularly helpful
-for: 
+## Features
 
-1. complex nested CLIs (e.g. docker, git)
-2. building a custom menu for your most-used CLIs
+- [X] Interactive command building
+- [X] Contextual help and descriptions
+- [X] Works alongside existing CLI tools
+- [ ] Command history tracking
+- [ ] Smart tab completion
 
-Yakari is **not** a tool to write command line interfaces from scratch (see
-argparse, click).
+## How it works?
 
+Yakari is built around three core concepts:
 
+- A `Menu` organizes your command structure through a collection of sub-menus, arguments, and commands
+- An `Argument` represents an interactive variable (flag, named argument, or positional argument) that users can modify
+- A `Command` defines the final executable instruction
 
-# Origin of the name
+Yakari uses TOML configuration files to define menus. Here's an example that creates
+a simple `git` menu for branch operations:
 
-Yakari gets its name from a Franco-Belgian comic about a young Native
-American boy who can talk to animals. Much like how the comic's hero connects 
-with wildlife, this tool helps users talk to command line interfaces.
+```toml
+name = "git"
+
+[menus.b]
+name = "Branch operations"
+
+[menus.b.arguments]
+"-f" = { flag="--force" }
+
+[menus.b.commands.b]
+name = "create"
+description = "Create new branch"
+template = [
+    "git", 
+    "checkout", 
+    {varname="optional_arguments"},  # special deferred value to capture all menu arguments
+    "-b", {name="branch_name"}       # dynamic argument querying the user at run time
+]
+
+[menus.b.commands.d]
+name = "delete"
+description = "Delete a branch"
+template = ["git", "branch", {varname="optional_arguments"}, "-d", {name="branch_name"}]
+
+[menus.b.commands.l]
+name = "list"
+description = "List branches"
+template = ["git", "branch", {varname="optional_arguments"}, "--list"]
+```
+
+## Using Predefined Configurations
+
+Yakari comes with a set of ready-to-use configurations. To get started:
+
+1. Link or copy the configurations to your config directory:
+``` sh
+ln -s /path/to/yakari/configurations ~/.config/yakari
+```
+
+2. Run commands using the shorter syntax:
+   - Instead of `ykri ~/.config/yakari/git.toml`
+   - Simply use `ykri git`
+
+Yakari automatically searches for matching TOML configurations in `~/.config/yakari`.
+
+## Why Yakari?
+
+The name comes from a Franco-Belgian comic book character who can talk to
+animals. Similarly, this tool helps users communicate more naturally with
+command-line programs by turning intimidating command structures into guided
+conversations.

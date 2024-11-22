@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ykri = "yakari.cli:main"
+yakari = "yakari.cli:main"
 
 [project.optional-dependencies]
 generator = [
