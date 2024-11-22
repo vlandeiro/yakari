@@ -10,7 +10,6 @@ try:
         SystemMessagePromptTemplate,
         HumanMessagePromptTemplate,
         ChatPromptTemplate,
-
     )
     from langchain_openai import ChatOpenAI
 except ImportError:
@@ -24,7 +23,6 @@ class RunHelpCommand(BaseModel):
 class ModelResult(BaseModel):
     more_information_needed: bool
     result: RunHelpCommand | Menu
-
 
 
 system_msg = """
@@ -107,10 +105,7 @@ llm1 = ChatOpenAI(model_name=model_name).with_structured_output()
 llm2 = ChatOpenAI(model_name=model_name).with_structured_output(ModelResult)
 
 # Create message prompts
-messages = [
-    SystemMessage(system_msg),
-    HumanMessage(human_msg)
-]
+messages = [SystemMessage(system_msg), HumanMessage(human_msg)]
 
 # Get response from LLM
 result: ModelResult = llm.invoke(messages)
@@ -127,9 +122,11 @@ while True:
         help_command = result.result.command
         help_command_result = get_help_command_result(help_command)
 
-        messages.append(HumanMessage(
-            f"## Help command\n\n{help_command}\n\n## Help command's result\n\n{help_command_result}"
-        ))
+        messages.append(
+            HumanMessage(
+                f"## Help command\n\n{help_command}\n\n## Help command's result\n\n{help_command_result}"
+            )
+        )
         llm.invoke(messages)
 
 # client = OpenAI()

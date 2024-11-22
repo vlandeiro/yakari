@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from textual import events, log, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal
@@ -259,9 +261,7 @@ class MenuScreen(Screen):
                 case Deferred():
                     resolved_command.extend(part.evaluate(locals()))
 
-        command_str = " ".join(resolved_command)
-
-        self.app.command = command_str
+        self.app.command = resolved_command
         self.app.exit(resolved_command)
 
     async def process_menu(self, menu: Menu):
@@ -303,9 +303,13 @@ class YakariApp(App):
         ("ctrl+g", "quit", "Exit"),
     ]
 
-    def __init__(self, command_name, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.menu = Menu.from_toml(command_name)
+    def __init__(self, command_or_menu: str | Path | Menu):
+        super().__init__()
+        match command_or_menu:
+            case Menu():
+                self.menu = command_or_menu
+            case _:
+                self.menu = Menu.from_toml(command_or_menu)
         self.command = None
 
     def on_mount(self) -> None:

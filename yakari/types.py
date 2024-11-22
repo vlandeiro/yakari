@@ -7,7 +7,7 @@ and complete menu structures in a type-safe way using Pydantic data validation.
 import os
 from collections import deque
 from pathlib import Path
-from typing import Deque, Dict, List, Self
+from typing import Any, Deque, Dict, List, Self
 
 import tomlkit
 from pydantic import BaseModel, Field, PrivateAttr
@@ -18,8 +18,7 @@ class Deferred(BaseModel):
 
     varname: str
 
-    def evaluate(self, context=None):
-        context = context or globals()
+    def evaluate(self, context: Dict[str, Any]):
         return context[self.varname]
 
 
@@ -235,9 +234,12 @@ class Menu(BaseModel):
     _ancestors_arguments: Dict[Shortcut, Argument] = PrivateAttr(default_factory=dict)
 
     @classmethod
-    def from_toml(cls, command_name: str) -> Self:
-        base_path = Path(os.environ.get("HOME")) / ".config" / "yakari"
-        config_path = (base_path / command_name).with_suffix(".toml")
+    def from_toml(cls, command_name: str | Path) -> Self:
+        if isinstance(command_name, Path):
+            config_path = command_name
+        else:
+            base_path = Path(os.environ.get("HOME")) / ".config" / "yakari"
+            config_path = (base_path / command_name).with_suffix(".toml")
 
         if not (config_path.exists() and config_path.is_file()):
             raise ValueError(f"No configuration file for command '{command_name}'.")
