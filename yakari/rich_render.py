@@ -166,13 +166,14 @@ def render_arguments_group(
     return Padding(table, TABLE_PADDING)
 
 
-def render_menu(menu: Menu, user_input: str):
+def render_menu(menu: Menu, user_input: str, sort_by_keys: bool = True):
     """
     Generate a complete menu rendering including title, subcommands, arguments, and commands.
 
     Args:
         menu (Menu): Menu object containing all elements to be rendered
         user_input (str): Current user input string used for styling and filtering
+        sort_by_keys (bool): Whether to sort the entries by their keyboard shortcuts. Defaults to True.
 
     Yields:
         Union[Text, Padding]: A sequence of Rich components representing different parts of the menu:
@@ -188,13 +189,15 @@ def render_menu(menu: Menu, user_input: str):
     yield Text(menu.name, style="bold")
     if menu.menus:
         table = Table("key", "prefix", title="Subcommands", **TABLE_CONFIG)
-        for key, prefix in menu.menus.items():
+        menu_items = sorted(menu.menus.items()) if sort_by_keys else menu.menus.items()
+        for key, prefix in menu_items:
             table.add_row(key, prefix.name)
         yield Padding(table, TABLE_PADDING)
 
     if menu.arguments:
         groups = group_arguments(menu.arguments)
         for group_name, arguments in groups.items():
+            arguments = sorted(arguments) if sort_by_keys else arguments
             yield render_arguments_group(group_name, arguments, user_input)
 
     if menu.commands:
@@ -205,7 +208,8 @@ def render_menu(menu: Menu, user_input: str):
             title="Commands",
             **TABLE_CONFIG,
         )
-        for key, command in menu.commands.items():
+        commands_items = sorted(menu.commands.items()) if sort_by_keys else menu.commands.items()
+        for key, command in commands_items:
             log(f"Render command {key}: {command}")
             table.add_row(key, command.name, command.description)
         yield Padding(table, TABLE_PADDING)
