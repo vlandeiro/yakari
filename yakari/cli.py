@@ -19,7 +19,7 @@ def main():
 
     if cmd:
         if args.dry_run:
-            print(" ".join(cmd))
+            print(cmd)
         else:
             subprocess.run(cmd)
 

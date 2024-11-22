@@ -191,6 +191,7 @@ def render_menu(menu: Menu, user_input: str, sort_by_keys: bool = True):
         table = Table("key", "prefix", title="Subcommands", **TABLE_CONFIG)
         menu_items = sorted(menu.menus.items()) if sort_by_keys else menu.menus.items()
         for key, prefix in menu_items:
+            key = render_key(key, user_input)
             table.add_row(key, prefix.name)
         yield Padding(table, TABLE_PADDING)
 
@@ -208,8 +209,13 @@ def render_menu(menu: Menu, user_input: str, sort_by_keys: bool = True):
             title="Commands",
             **TABLE_CONFIG,
         )
-        commands_items = sorted(menu.commands.items()) if sort_by_keys else menu.commands.items()
+        commands_items = (
+            sorted(menu.commands.items()) if sort_by_keys else menu.commands.items()
+        )
         for key, command in commands_items:
-            log(f"Render command {key}: {command}")
-            table.add_row(key, command.name, command.description)
+            style = None
+            if should_dim(key, user_input):
+                style = DIM_STYLE
+            key = render_key(key, user_input)
+            table.add_row(key, command.name, command.description, style=style)
         yield Padding(table, TABLE_PADDING)

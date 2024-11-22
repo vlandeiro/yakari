@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Literal
 
-from textual import events, log, work
+from textual import events, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal
 from textual.reactive import reactive
@@ -52,7 +52,7 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         argument (ValueArgument): The argument to get input for
     """
 
-    def __init__(self, argument: ValueArgument, value: str=""):
+    def __init__(self, argument: ValueArgument, value: str = ""):
         self.argument = argument
         self.argument._history.restart()
         self.label_widget = Label(f"{self.argument.name}=")
@@ -101,12 +101,13 @@ class MenuScreen(Screen):
     cur_input = reactive("", recompose=True)
 
     def __init__(self, menu: Menu, is_entrypoint: bool = False):
-        super().__init__(classes="main-screen")
+        super().__init__()
         self.menu = menu
         self.is_entrypoint = is_entrypoint
         self.candidates = {**menu.arguments, **menu.menus, **menu.commands}
 
     def compose(self) -> ComposeResult:
+        yield Label(self.cur_input)
         for renderable in render_menu(self.menu, self.cur_input):
             yield Static(renderable)
 
@@ -187,7 +188,9 @@ class MenuScreen(Screen):
             case Menu():
                 await self.process_menu(match_value)
 
-    async def process_argument(self, argument: Argument, action: Literal["edit"] | Literal["toggle"]="toggle"):
+    async def process_argument(
+        self, argument: Argument, action: Literal["edit"] | Literal["toggle"] = "toggle"
+    ):
         """Handle processing of different argument types.
 
         Args:
@@ -248,7 +251,12 @@ class MenuScreen(Screen):
         all_arguments = {**self.menu._ancestors_arguments, **self.menu.arguments}
         for key, argument in all_arguments.items():
             if argument.enabled:
-                optional_arguments.append(argument.render_template())
+                rendered_argument = argument.render_template()
+                match rendered_argument:
+                    case str():
+                        optional_arguments.append(rendered_argument)
+                    case list():
+                        optional_arguments.extend(rendered_argument)
 
         resolved_command = []
         for part in command.template:
@@ -259,7 +267,12 @@ class MenuScreen(Screen):
                     await self.process_argument(part, action="edit")
                     if not part.enabled:
                         return
-                    resolved_command.append(part.render_template())
+                    rendered_argument = part.render_template()
+                    match rendered_argument:
+                        case str():
+                            resolved_command.append(rendered_argument)
+                        case list():
+                            resolved_command.extend(rendered_argument)
                 case Deferred():
                     resolved_command.extend(part.evaluate(locals()))
 
@@ -299,8 +312,8 @@ class MenuScreen(Screen):
 class YakariApp(App):
     """Main application class for Yakari command-line interface."""
 
+    ENABLE_COMMAND_PALETTE = False
     CSS_PATH = "app.css"
-
     BINDINGS = [
         ("ctrl+g", "quit", "Exit"),
     ]
@@ -316,6 +329,5 @@ class YakariApp(App):
 
     def on_mount(self) -> None:
         menu_screen = MenuScreen(self.menu, is_entrypoint=True)
-        log(f"Menu: {self.menu}")
         self.install_screen(menu_screen, self.menu.name)
         self.push_screen(self.menu.name)

@@ -87,16 +87,16 @@ class Argument(BaseModel):
     Base class for all command arguments, providing common functionality.
 
     Attributes:
-        template (str | None): A templated python string to render the argument.
+        template (str | List[str] | None): A templated python string to render the argument.
         description (str): A short description explaining the argument's purpose
         group (str | None): The name of the group this argument belongs to
     """
 
-    template: str | None = Field(
+    template: str | List[str] | None = Field(
         default=None,
         description=(
             "A templated python string to represent the argument. "
-            "It can attributes available on `self`."
+            "It can use attributes available on `self`."
         ),
     )
     description: str = Field(
@@ -106,8 +106,14 @@ class Argument(BaseModel):
         default=None, description="The name of the group this argument belongs to."
     )
 
-    def render_template(self) -> str:
-        return self.template.format(self=self)
+    def render_template(self) -> List[str] | str:
+        match self.template:
+            case list():
+                return [part.format(self=self) for part in self.template]
+            case str():
+                return self.template.format(self=self)
+            case _:
+                return
 
 
 class FlagArgument(Argument):

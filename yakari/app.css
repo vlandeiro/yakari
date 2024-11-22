@@ -20,7 +20,12 @@ ModalScreen OptionList {
     border: none;
 }
 
-.main-screen {
-    padding: 1 1;
+MenuScreen Label {
+    dock: bottom;
+    background: $background-lighten-3;
+    width: 100%;
+    height: auto;
     border: none;
+    margin: 0;
+    padding: 0;
 }
