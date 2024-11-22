@@ -66,8 +66,8 @@ ln -s /path/to/yakari/configurations ~/.config/yakari
 ```
 
 2. Run commands using the shorter syntax:
-   - Instead of `ykri ~/.config/yakari/git.toml`
-   - Simply use `ykri git`
+   - Instead of `yakari ~/.config/yakari/git.toml`
+   - Simply use `yakari git`
 
 Yakari automatically searches for matching TOML configurations in `~/.config/yakari`.
 
