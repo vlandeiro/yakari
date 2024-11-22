@@ -6,13 +6,14 @@ Transform complex command-line interfaces into guided, interactive experiences. 
 helps users build commands step by step, making CLI tools more accessible and
 user-friendly through contextual assistance.
 
-## Features
+Roadmap:
 
 - [X] Interactive command building
 - [X] Contextual help and descriptions
 - [X] Works alongside existing CLI tools
 - [ ] Command history tracking
-- [ ] Smart tab completion
+- [ ] Completion from other commands
+- [ ] Support multi-value argument
 
 ## How it works?
 
