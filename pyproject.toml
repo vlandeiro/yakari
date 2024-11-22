@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.9.2",
+    "pytest-cov>=6.0.0",
     "rich>=13.9.4",
     "textual>=0.86.1",
     "tomlkit>=0.13.2",
