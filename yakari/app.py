@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Literal
 
 from textual import events, log, work
 from textual.app import App, ComposeResult
@@ -51,11 +52,11 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         argument (ValueArgument): The argument to get input for
     """
 
-    def __init__(self, argument: ValueArgument):
+    def __init__(self, argument: ValueArgument, value: str=""):
         self.argument = argument
         self.argument._history.restart()
         self.label_widget = Label(f"{self.argument.name}=")
-        self.input_widget = Input(value="")
+        self.input_widget = Input(value=value)
         super().__init__()
 
     def compose(self) -> ComposeResult:
@@ -186,11 +187,12 @@ class MenuScreen(Screen):
             case Menu():
                 await self.process_menu(match_value)
 
-    async def process_argument(self, argument: Argument):
+    async def process_argument(self, argument: Argument, action: Literal["edit"] | Literal["toggle"]="toggle"):
         """Handle processing of different argument types.
 
         Args:
             argument (Argument): The argument to process
+            action (Literal["edit"] | Literal["toggle"]): Whether the targeted argument should be edited or toggled when active. This parameter has no effect for `FlagArgument` instances.
 
         Handles:
         - Toggling flag arguments
@@ -210,7 +212,7 @@ class MenuScreen(Screen):
                         argument.selected = argument.choices[value]
                     self.cur_input = ""
 
-                if argument.selected:
+                if argument.selected and action == "toggle":
                     set_argument_value_and_reset_input(None)
                 else:
                     new_value = await self.app.push_screen_wait(
@@ -224,11 +226,11 @@ class MenuScreen(Screen):
                     argument.add_to_history(value)
                     self.cur_input = ""
 
-                if argument.value is not None:
+                if argument.value is not None and action == "toggle":
                     set_argument_value_and_reset_input(None)
                 else:
                     new_value = await self.app.push_screen_wait(
-                        ValueArgumentInputScreen(argument),
+                        ValueArgumentInputScreen(argument, argument.value),
                     )
                     set_argument_value_and_reset_input(new_value)
 
@@ -254,7 +256,7 @@ class MenuScreen(Screen):
                 case str():
                     resolved_command.append(part)
                 case Argument():
-                    await self.process_argument(part)
+                    await self.process_argument(part, action="edit")
                     if not part.enabled:
                         return
                     resolved_command.append(part.render_template())
