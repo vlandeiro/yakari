@@ -2,19 +2,20 @@
 
 # Yakari
 
-Yakari is an interactive command generation tool. It aims to recreate the experience from Emacs's transient package.
+Yakari is an interactive command generation tool. Its user-interface is heavily
+inspired by [transient](https://magit.vc/manual/transient/), an Emacs package to
+build interactive menus.
 
-## Motivation
+Building a Yakari menu lets users discover CLI features interactively. This is
+particularly helpful for complex nested CLIs (e.g. docker, git) but it can be
+used for any CLI installed on the user's machine.
 
-- Magit is a tool to interact with ~git~ in emacs.
-- Its interface lets users use ~git~ and discover new features.
-- It relies on the ~transient~ library, an [[https://magit.vc/manual/transient/][Emacs package]] written in Emacs Lisp
-  (https://magit.vc/manual/transient/).
-- Emacs is not used by everyone and I could not find existing tools that
-  reproduced the same behavior outside of Emacs.
+Yakari is **not** a tool to write command line interfaces from scratch (see
+argparse, click).
 
-## Definition
+# Origin of the name
 
-- yakari is a command generator and command invoker
-- yakari calls existing CLIs
-- yakari is not a replacement for click, fire, docopt, argparse, etc
+Yakari gets its name from a classic Franco-Belgian comic about a young Native
+American boy who can talk to animals. Much like how the comic's hero connects 
+with wildlife, this tool helps users feel more comfortable with command line
+interfaces.
