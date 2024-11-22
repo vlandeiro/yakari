@@ -1,6 +1,6 @@
-<img src="./static/yakari.png" width="150" align="left" />
-
 # Yakari
+
+<img src="./static/yakari.png" width="150" align="right" style="transform: scaleX(-1);" />
 
 Yakari is an interactive command generation tool. Its user-interface is heavily
 inspired by [transient](https://magit.vc/manual/transient/), an Emacs package to
