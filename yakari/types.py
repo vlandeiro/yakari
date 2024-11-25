@@ -12,6 +12,7 @@ from typing import Any, Deque, Dict, List, Self
 import tomlkit
 from pydantic import BaseModel, Field, PrivateAttr
 
+from . import constants as C
 
 class Deferred(BaseModel):
     """A class representing a deferred value that will be evaluated at runtime from a variable."""
@@ -244,11 +245,11 @@ class Menu(BaseModel):
         if isinstance(command_name, Path):
             config_path = command_name
         else:
-            base_path = Path(os.environ.get("HOME")) / ".config" / "yakari"
+            base_path = C.YAKARI_HOME / C.CONFIGURATIONS_DIR
             config_path = (base_path / command_name).with_suffix(".toml")
 
         if not (config_path.exists() and config_path.is_file()):
-            raise ValueError(f"No configuration file for command '{command_name}'.")
+            raise ValueError(f"No configuration file for command '{command_name}' in {base_path}.")
 
         with config_path.open("r") as fd:
             model = tomlkit.load(fd).unwrap()

@@ -1,7 +1,7 @@
 [project]
 name = "yakari"
 version = "0.1.0"
-description = "Command generator with transient-like interface"
+description = "Interactive command building tool."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
