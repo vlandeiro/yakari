@@ -6,14 +6,23 @@ Transform complex command-line interfaces into guided, interactive experiences. 
 helps users build commands step by step, making CLI tools more accessible and
 user-friendly through contextual assistance.
 
-Roadmap:
+Powered by [pydantic](https://github.com/pydantic/pydantic) and
+[textual](https://github.com/Textualize/textual).
+
+**Roadmap**: 
 
 - [X] Interactive command building
 - [X] Contextual help and descriptions
 - [X] Works alongside existing CLI tools
-- [ ] Command history tracking
+- [X] Command history across executions
 - [ ] Completion from other commands
-- [ ] Support multi-value argument
+- Support argument types:
+  - [X] Support flag argument
+  - [X] Support single-value argument
+  - [X] Support multi-choice argument 
+  - [ ] Support password argument
+  - [ ] Support multi-value argument
+  - [ ] Support file argument
 
 ## How it works?
 

@@ -4,17 +4,22 @@ This module provides classes to represent actions, commands, command groups,
 and complete menu structures in a type-safe way using Pydantic data validation.
 """
 
-import os
 from collections import deque
 from pathlib import Path
 from typing import Any, Deque, Dict, List, Self
+from uuid import uuid4
 
 import tomlkit
 from pydantic import BaseModel, Field, PrivateAttr
 
 from . import constants as C
 
-class Deferred(BaseModel):
+
+class YakariType(BaseModel):
+    _id: str = PrivateAttr(default_factory=lambda: str(uuid4()))
+
+
+class Deferred(YakariType):
     """A class representing a deferred value that will be evaluated at runtime from a variable."""
 
     varname: str
@@ -83,7 +88,7 @@ class MatchResult(BaseModel):
     partial_matches: List[str] = Field(default_factory=list)
 
 
-class Argument(BaseModel):
+class Argument(YakariType):
     """
     Base class for all command arguments, providing common functionality.
 
@@ -175,14 +180,10 @@ class ValueArgument(Argument):
 
     name: str
     value: str | None = Field(default=None, description="The value for this argument.")
-    _history: List[str] = PrivateAttr(default_factory=History)
 
     @property
     def enabled(self):
         return self.value is not None
-
-    def add_to_history(self, value: str | None):
-        self._history.add(value)
 
     @property
     def positional(self):
@@ -198,12 +199,13 @@ class ValueArgument(Argument):
 
 
 # TODO: add multi-value argument
+# TODO: add password argument
 
 
 ArgumentImpl = FlagArgument | ValueArgument | ChoiceArgument
 
 
-class Command(BaseModel):
+class Command(YakariType):
     """
     Represents a command with configurable arguments and template-based execution.
 
@@ -222,7 +224,7 @@ class Command(BaseModel):
 Shortcut = str
 
 
-class Menu(BaseModel):
+class Menu(YakariType):
     """
     Represents the complete menu structure containing groups of commands.
 
@@ -235,7 +237,7 @@ class Menu(BaseModel):
 
     name: str
     arguments: Dict[Shortcut, ArgumentImpl] = Field(default_factory=dict)
-    menus: Dict[Shortcut, "Menu"] = Field(default_factory=dict)
+    menus: Dict[Shortcut, Self] = Field(default_factory=dict)
     commands: Dict[Shortcut, Command] = Field(default_factory=dict)
 
     _ancestors_arguments: Dict[Shortcut, Argument] = PrivateAttr(default_factory=dict)
@@ -249,7 +251,9 @@ class Menu(BaseModel):
             config_path = (base_path / command_name).with_suffix(".toml")
 
         if not (config_path.exists() and config_path.is_file()):
-            raise ValueError(f"No configuration file for command '{command_name}' in {base_path}.")
+            raise ValueError(
+                f"No configuration file for command '{command_name}' in {base_path}."
+            )
 
         with config_path.open("r") as fd:
             model = tomlkit.load(fd).unwrap()

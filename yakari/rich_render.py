@@ -189,7 +189,11 @@ def render_menu(menu: Menu, user_input: str, sort_by_keys: bool = True):
     yield Text(menu.name, style="bold")
     if menu.menus:
         table = Table("key", "prefix", title="Subcommands", **TABLE_CONFIG)
-        menu_items = sorted(menu.menus.items(), key=lambda x: x[0].lower()) if sort_by_keys else menu.menus.items()
+        menu_items = (
+            sorted(menu.menus.items(), key=lambda x: x[0].lower())
+            if sort_by_keys
+            else menu.menus.items()
+        )
         for key, prefix in menu_items:
             key = render_key(key, user_input)
             table.add_row(key, prefix.name)
@@ -198,7 +202,11 @@ def render_menu(menu: Menu, user_input: str, sort_by_keys: bool = True):
     if menu.arguments:
         groups = group_arguments(menu.arguments)
         for group_name, arguments in groups.items():
-            arguments = sorted(arguments, key=lambda x: x[0].lower()) if sort_by_keys else arguments
+            arguments = (
+                sorted(arguments, key=lambda x: x[0].lower())
+                if sort_by_keys
+                else arguments
+            )
             yield render_arguments_group(group_name, arguments, user_input)
 
     if menu.commands:
@@ -210,7 +218,9 @@ def render_menu(menu: Menu, user_input: str, sort_by_keys: bool = True):
             **TABLE_CONFIG,
         )
         commands_items = (
-            sorted(menu.commands.items(), key=lambda x: x[0].lower()) if sort_by_keys else menu.commands.items()
+            sorted(menu.commands.items(), key=lambda x: x[0].lower())
+            if sort_by_keys
+            else menu.commands.items()
         )
         for key, command in commands_items:
             style = None

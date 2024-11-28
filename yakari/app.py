@@ -1,3 +1,5 @@
+import shelve
+from collections import deque
 from pathlib import Path
 from typing import Literal
 
@@ -8,6 +10,7 @@ from textual.reactive import reactive
 from textual.screen import ModalScreen, Screen
 from textual.widgets import Input, Label, OptionList, Static
 
+from . import constants as C
 from .rich_render import render_menu
 from .types import (
     Argument,
@@ -15,6 +18,7 @@ from .types import (
     Command,
     Deferred,
     FlagArgument,
+    History,
     MatchResult,
     Menu,
     ValueArgument,
@@ -54,7 +58,8 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
 
     def __init__(self, argument: ValueArgument, value: str = ""):
         self.argument = argument
-        self.argument._history.restart()
+        self.shelf = None
+        self.history = None
         self.label_widget = Label(f"{self.argument.name}=")
         self.input_widget = Input(value=value)
         super().__init__()
@@ -65,24 +70,32 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
     def on_key(self, event: events.Key) -> None:
         match event.key:
             case "enter":
+                if self.input_widget.value:
+                    self.history.add(self.input_widget.value)
                 self.dismiss(self.input_widget.value)
             case "ctrl+g":
                 if self.input_widget.value:
                     self.input_widget.value = ""
-                    self.argument._history.restart()
+                    self.history.restart()
                 else:
                     self.dismiss(None)
                     event.stop()
             case "down":
-                if (prev_value := self.argument._history.prev) and (
-                    prev_value is not None
-                ):
+                if (prev_value := self.history.prev) and (prev_value is not None):
                     self.input_widget.value = prev_value
             case "up":
-                if (next_value := self.argument._history.next) and (
-                    next_value is not None
-                ):
+                if (next_value := self.history.next) and (next_value is not None):
                     self.input_widget.value = next_value
+
+    def on_mount(self):
+        self.shelf = shelve.open(C.HISTORY_FILE, writeback=True)
+        self.history = History(
+            values=self.shelf.get(self.argument.name, deque()), cur_pos=-1
+        )
+
+    def on_unmount(self):
+        self.shelf[self.argument.name] = self.history.values
+        self.shelf.close()
 
 
 class MenuScreen(Screen):
@@ -195,7 +208,8 @@ class MenuScreen(Screen):
 
         Args:
             argument (Argument): The argument to process
-            action (Literal["edit"] | Literal["toggle"]): Whether the targeted argument should be edited or toggled when active. This parameter has no effect for `FlagArgument` instances.
+            action (Literal["edit"] | Literal["toggle"]): Whether the targeted argument should be edited or
+            toggled when active. This parameter has no effect for `FlagArgument` instances.
 
         Handles:
         - Toggling flag arguments
@@ -226,7 +240,6 @@ class MenuScreen(Screen):
 
                 def set_argument_value_and_reset_input(value: str):
                     argument.value = value
-                    argument.add_to_history(value)
                     self.cur_input = ""
 
                 if argument.value is not None and action == "toggle":
