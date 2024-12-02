@@ -5,12 +5,10 @@ from rich.padding import Padding
 from rich.style import Style
 from rich.table import Column, Table
 from rich.text import Text
-from textual import log
 
 from .types import (
     Argument,
     ChoiceArgument,
-    Command,
     FlagArgument,
     Menu,
     Shortcut,
@@ -40,7 +38,7 @@ def should_dim(key: str, user_input: str) -> str:
     return not key.startswith(user_input)
 
 
-def render_value(value: str | None) -> str:
+def render_value(value: str | None, obfuscate: bool = False) -> str:
     """
     Convert a value to its string representation for display.
 
@@ -57,6 +55,10 @@ def render_value(value: str | None) -> str:
         return ""
     elif value == "":  # special case for a valid empty string input
         return '""'
+    elif obfuscate:
+        return "*" * min(len(value), 40)
+    elif len(value) > 40:
+        return f"{value[:18]}...{value[-18:]}"
     else:
         return value
 
@@ -91,7 +93,7 @@ def render_argument(argument: Argument) -> Tuple[str | Text, str | Text]:
             )
         case ValueArgument():
             return (
-                f"{argument.name}={render_value(argument.value)}",
+                f"{argument.name}={render_value(argument.value, obfuscate=argument.password)}",
                 argument.description,
             )
         case _:

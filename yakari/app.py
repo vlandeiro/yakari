@@ -58,10 +58,16 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
 
     def __init__(self, argument: ValueArgument, value: str = ""):
         self.argument = argument
-        self.shelf = None
-        self.history = None
+        self.with_history = not argument.password
         self.label_widget = Label(f"{self.argument.name}=")
-        self.input_widget = Input(value=value)
+        self.input_widget = Input(value=value, password=argument.password)
+
+        if self.with_history:
+            self.shelf = shelve.open(C.HISTORY_FILE, writeback=True)
+            self.history = History(
+                values=self.shelf.get(self.argument.name, deque()), cur_pos=-1
+            )
+
         super().__init__()
 
     def compose(self) -> ComposeResult:
@@ -70,32 +76,28 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
     def on_key(self, event: events.Key) -> None:
         match event.key:
             case "enter":
-                if self.input_widget.value:
+                if self.input_widget.value and self.with_history:
                     self.history.add(self.input_widget.value)
                 self.dismiss(self.input_widget.value)
             case "ctrl+g":
                 if self.input_widget.value:
                     self.input_widget.value = ""
-                    self.history.restart()
+                    if self.with_history:
+                        self.history.restart()
                 else:
                     self.dismiss(None)
                     event.stop()
             case "down":
-                if (prev_value := self.history.prev) and (prev_value is not None):
+                if self.with_history and (prev_value := self.history.prev) and (prev_value is not None):
                     self.input_widget.value = prev_value
             case "up":
-                if (next_value := self.history.next) and (next_value is not None):
+                if self.with_history and (next_value := self.history.next) and (next_value is not None):
                     self.input_widget.value = next_value
 
-    def on_mount(self):
-        self.shelf = shelve.open(C.HISTORY_FILE, writeback=True)
-        self.history = History(
-            values=self.shelf.get(self.argument.name, deque()), cur_pos=-1
-        )
-
     def on_unmount(self):
-        self.shelf[self.argument.name] = self.history.values
-        self.shelf.close()
+        if self.with_history:
+            self.shelf[self.argument.name] = self.history.values
+            self.shelf.close()
 
 
 class MenuScreen(Screen):

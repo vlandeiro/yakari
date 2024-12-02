@@ -156,9 +156,9 @@ class ChoiceArgument(Argument):
     choices: List[str] = Field(
         description="A list of available values for this argument."
     )
-    selected: str | None = Field(
+    selected: str | List[str] | None = Field(
         default=None,
-        description="The selection value for this argument. MUST be one of the values in `choices`.",
+        description="The selection value for this argument.",
     )
     template: str = "{self.name} {self.selected}"
 
@@ -166,20 +166,21 @@ class ChoiceArgument(Argument):
     def enabled(self):
         return self.selected is not None
 
-    # TODO: add validation that `selected` is one of the values in `choices`
-
 
 class ValueArgument(Argument):
     """
     Represents a command argument that accepts an arbitrary value.
 
     Attributes:
-        name (str): Name of the argument
+        name (str): Name of the argument. Should
         value (str | None): The argument's value
+        password (bool): True if the argument represents a field that should be obfuscated.
+                         Defaults to False.
     """
 
     name: str
     value: str | None = Field(default=None, description="The value for this argument.")
+    password: bool = False
 
     @property
     def enabled(self):
@@ -199,7 +200,6 @@ class ValueArgument(Argument):
 
 
 # TODO: add multi-value argument
-# TODO: add password argument
 
 
 ArgumentImpl = FlagArgument | ValueArgument | ChoiceArgument

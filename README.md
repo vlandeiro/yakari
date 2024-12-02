@@ -15,12 +15,12 @@ Powered by [pydantic](https://github.com/pydantic/pydantic) and
 - [X] Contextual help and descriptions
 - [X] Works alongside existing CLI tools
 - [X] Command history across executions
-- [ ] Completion from other commands
+- [ ] Suggestions from other commands
 - Support argument types:
   - [X] Support flag argument
   - [X] Support single-value argument
   - [X] Support multi-choice argument 
-  - [ ] Support password argument
+  - [X] Support password argument
   - [ ] Support multi-value argument
   - [ ] Support file argument
 
