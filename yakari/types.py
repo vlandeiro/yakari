@@ -15,11 +15,7 @@ from pydantic import BaseModel, Field, PrivateAttr
 from . import constants as C
 
 
-class YakariType(BaseModel):
-    _id: str = PrivateAttr(default_factory=lambda: str(uuid4()))
-
-
-class Deferred(YakariType):
+class Deferred(BaseModel):
     """A class representing a deferred value that will be evaluated at runtime from a variable."""
 
     varname: str
@@ -88,7 +84,7 @@ class MatchResult(BaseModel):
     partial_matches: List[str] = Field(default_factory=list)
 
 
-class Argument(YakariType):
+class Argument(BaseModel):
     """
     Base class for all command arguments, providing common functionality.
 
@@ -205,7 +201,7 @@ class ValueArgument(Argument):
 ArgumentImpl = FlagArgument | ValueArgument | ChoiceArgument
 
 
-class Command(YakariType):
+class Command(BaseModel):
     """
     Represents a command with configurable arguments and template-based execution.
 
@@ -224,7 +220,7 @@ class Command(YakariType):
 Shortcut = str
 
 
-class Menu(YakariType):
+class Menu(BaseModel):
     """
     Represents the complete menu structure containing groups of commands.
 
