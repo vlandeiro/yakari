@@ -60,7 +60,7 @@ def render_value(value: str | None, obfuscate: bool = False) -> str:
     elif len(value) > 40:
         return f"{value[:18]}...{value[-18:]}"
     else:
-        return value
+        return str(value)
 
 
 def render_argument(argument: Argument) -> Tuple[str | Text, str | Text]:
@@ -84,11 +84,14 @@ def render_argument(argument: Argument) -> Tuple[str | Text, str | Text]:
         case ChoiceArgument():
             choices_str = " | ".join(argument.choices)
             choices_str = f"[ {choices_str} ]"
+            choices_str = Text(choices_str)
             if argument.selected:
-                choices_str = Text(choices_str)
-                choices_str.highlight_words([f" {argument.selected} "], HIGHLIGHT_STYLE)
+                choices_str.highlight_words(
+                    [f" {value} " for value in argument.selected], HIGHLIGHT_STYLE
+                )
+
             return (
-                Text.assemble(argument.name, "=", argument.selected or ""),
+                Text.assemble(argument.name, "=", render_value(argument.selected)),
                 Text.assemble(argument.description, " ", choices_str),
             )
         case ValueArgument():
@@ -158,10 +161,10 @@ def render_arguments_group(
     )
     for key, argument in arguments:
         style = None
-        if argument.enabled:
-            style = ENABLED_STYLE
-        elif should_dim(key, user_input):
+        if should_dim(key, user_input):
             style = DIM_STYLE
+        elif argument.enabled:
+            style = ENABLED_STYLE
 
         key = render_key(key, user_input)
         table.add_row(key, *render_argument(argument), style=style)

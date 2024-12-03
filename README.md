@@ -21,7 +21,7 @@ Powered by [pydantic](https://github.com/pydantic/pydantic) and
   - [X] Support single-value argument
   - [X] Support multi-choice argument 
   - [X] Support password argument
-  - [ ] Support multi-value argument
+  - [X] Support multi-value argument
   - [ ] Support file argument
 
 ## How it works?

@@ -4,10 +4,10 @@ This module provides classes to represent actions, commands, command groups,
 and complete menu structures in a type-safe way using Pydantic data validation.
 """
 
+from abc import ABC, abstractmethod
 from collections import deque
 from pathlib import Path
-from typing import Any, Deque, Dict, List, Self
-from uuid import uuid4
+from typing import Any, Deque, Dict, List, Literal, Self
 
 import tomlkit
 from pydantic import BaseModel, Field, PrivateAttr
@@ -90,8 +90,8 @@ class Argument(BaseModel):
 
     Attributes:
         template (str | List[str] | None): A templated python string to render the argument.
-        description (str): A short description explaining the argument's purpose
-        group (str | None): The name of the group this argument belongs to
+        description (str): A short description explaining the argument's purpose.
+        group (str | None): The name of the group this argument belongs to.
     """
 
     template: str | List[str] | None = Field(
@@ -138,7 +138,55 @@ class FlagArgument(Argument):
         return self.on
 
 
-class ChoiceArgument(Argument):
+class NamedArgument(Argument, ABC):
+    name: str
+    separator: Literal["space"] | Literal["equal"] = "space"
+    multi: bool = False
+    multi_style: Literal["repeat"] | str = ","
+
+    @property
+    def positional(self):
+        return not self.name.startswith("-")
+
+    @abstractmethod
+    def get_value_list(self) -> List[str]:
+        raise NotImplementedError()
+
+    def render_template(self) -> List[str] | str:
+        if self.template is not None:
+            return super().render_template()
+
+        values = self.get_value_list()
+        if self.positional:
+            multi_style = " " if self.multi_style == "repeat" else self.multi_style
+            return multi_style.join(values)
+
+        if not self.multi:
+            value = values[0]
+            match self.separator:
+                case "space":
+                    return [self.name, value]
+                case "equal":
+                    return f"{self.name}={value}"
+
+        if self.multi_style == "repeat":
+            result = []
+            for values in values:
+                match self.separator:
+                    case "space":
+                        result.extend([self.name, values])
+                    case "equal":
+                        result.append(f"{self.name}={self.value}")
+            return result
+
+        match self.separator:
+            case "space":
+                return [self.name, self.multi_style.join(values)]
+            case "equal":
+                return f"{self.name}={self.multi_style.join(values)}"
+
+
+class ChoiceArgument(NamedArgument):
     """
     Represents a command argument that must be chosen from a predefined set of values.
 
@@ -148,22 +196,25 @@ class ChoiceArgument(Argument):
         selected (str | None): Currently selected value
     """
 
-    name: str
     choices: List[str] = Field(
         description="A list of available values for this argument."
     )
-    selected: str | List[str] | None = Field(
+    selected: List[str] | None = Field(
         default=None,
         description="The selection value for this argument.",
     )
-    template: str = "{self.name} {self.selected}"
 
     @property
     def enabled(self):
         return self.selected is not None
 
+    def get_value_list(self):
+        if self.selected is None:
+            return None
+        return self.selected
 
-class ValueArgument(Argument):
+
+class ValueArgument(NamedArgument):
     """
     Represents a command argument that accepts an arbitrary value.
 
@@ -174,28 +225,21 @@ class ValueArgument(Argument):
                          Defaults to False.
     """
 
-    name: str
-    value: str | None = Field(default=None, description="The value for this argument.")
+    value: str | List[str] | None = Field(
+        default=None, description="The value for this argument."
+    )
     password: bool = False
 
     @property
     def enabled(self):
         return self.value is not None
 
-    @property
-    def positional(self):
-        return not self.name.startswith("-")
-
-    def render_template(self):
-        if self.template is not None:
-            return super().render_template()
-        elif self.positional:
-            return f"{self.value}"
-        else:
-            return f"{self.name} {self.value}"
-
-
-# TODO: add multi-value argument
+    def get_value_list(self):
+        if self.value is None:
+            return None
+        if isinstance(self.value, str):
+            return [self.value]
+        return self.value
 
 
 ArgumentImpl = FlagArgument | ValueArgument | ChoiceArgument

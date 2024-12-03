@@ -7,6 +7,11 @@ ModalScreen Horizontal {
     height: auto;
 }
 
+ModalScreen Vertical {
+    dock: bottom;
+    height: auto;
+}
+
 ModalScreen Input {
     border: none;
     height: auto;
@@ -20,12 +25,29 @@ ModalScreen OptionList {
     border: none;
 }
 
-MenuScreen Label {
+MenuScreen Horizontal {
     dock: bottom;
     background: $background-lighten-3;
-    width: 100%;
     height: auto;
-    border: none;
-    margin: 0;
-    padding: 0;
+    width: 100%;
+}
+
+MenuScreen .cur-input {
+    width: 90vw;
+}
+
+MenuScreen .mode {
+    width: 10vw;
+    min-width: 12;
+    text-align: right;
+}
+
+ValueArgumentInputScreen .result {
+    background: $primary;
+    margin: 0 1;
+    padding: 0 1;
+}
+
+ValueArgumentInputScreen .highlighted {
+    background: $primary-darken-3;
 }

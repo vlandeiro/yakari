@@ -1,14 +1,14 @@
 import shelve
 from collections import deque
 from pathlib import Path
-from typing import Literal
+from typing import Literal, List
 
 from textual import events, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal
 from textual.reactive import reactive
 from textual.screen import ModalScreen, Screen
-from textual.widgets import Input, Label, OptionList, Static
+from textual.widgets import Input, Label, OptionList, SelectionList, Static
 
 from . import constants as C
 from .rich_render import render_menu
@@ -25,25 +25,38 @@ from .types import (
 )
 
 
-class ChoiceArgumentInputScreen(ModalScreen[int | None]):
+class ChoiceArgumentInputScreen(ModalScreen[int | List[str] | None]):
     """A modal screen for selecting from a list of choices for an argument.
 
     Args:
         argument (ValueArgument): The argument containing the choices
     """
 
-    def __init__(self, argument: ValueArgument):
+    def __init__(self, argument: ChoiceArgument):
         self.argument = argument
-        self.widget = OptionList(*argument.choices)
+        if self.argument.multi:
+            selected = set()
+            if self.argument.selected:
+                selected = set(argument.selected)
+            selections = [
+                (choice, choice, True) if choice in selected else (choice, choice)
+                for choice in argument.choices
+            ]
+            self.widget = SelectionList(*selections)
+            self.result_attr = "selected"
+        else:
+            self.widget = OptionList(*argument.choices)
+            self.result_attr = "highlighted"
         super().__init__()
 
     def compose(self) -> ComposeResult:
         yield self.widget
 
     def on_key(self, event: events.Key) -> None:
+        result = getattr(self.widget, self.result_attr)
         match event.key:
             case "enter":
-                self.dismiss(self.widget.highlighted)
+                self.dismiss(result)
             case "ctrl+g":
                 self.dismiss(None)
                 event.stop()
@@ -56,29 +69,54 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         argument (ValueArgument): The argument to get input for
     """
 
-    def __init__(self, argument: ValueArgument, value: str = ""):
+    result: reactive[list[str]] = reactive(list, recompose=True)
+    highlighted: reactive[int] = reactive(int, recompose=True)
+
+    def __init__(self, argument: ValueArgument):
+        super().__init__()
+
         self.argument = argument
         self.with_history = not argument.password
         self.label_widget = Label(f"{self.argument.name}=")
-        self.input_widget = Input(value=value, password=argument.password)
 
-        if self.with_history:
-            self.shelf = shelve.open(C.HISTORY_FILE, writeback=True)
-            self.history = History(
-                values=self.shelf.get(self.argument.name, deque()), cur_pos=-1
-            )
-
-        super().__init__()
+        self.input_widget = Input(password=argument.password)
+        if argument.multi and argument.value and isinstance(argument.value, list):
+            self.result = argument.value
+            self.highlighted = len(self.result) - 1
+            self.mutate_reactive(ValueArgumentInputScreen.result)
+        elif argument.value:
+            self.input_widget.value = argument.value
 
     def compose(self) -> ComposeResult:
-        yield Horizontal(self.label_widget, self.input_widget)
+        if self.argument.multi:
+            parts = [self.label_widget]
+            for idx, r in enumerate(self.result):
+                classes = "result highlighted" if idx == self.highlighted else "result"
+                parts.append(Label(r, classes=classes))
+            parts.append(self.input_widget)
+            yield Horizontal(*parts)
+        else:
+            yield Horizontal(self.label_widget, self.input_widget)
 
     def on_key(self, event: events.Key) -> None:
         match event.key:
             case "enter":
                 if self.input_widget.value and self.with_history:
                     self.history.add(self.input_widget.value)
-                self.dismiss(self.input_widget.value)
+
+                if self.argument.multi:
+                    if not self.input_widget.value:
+                        self.dismiss(self.result)
+                    else:
+                        self.result.append(self.input_widget.value)
+                        self.highlighted = len(self.result) - 1
+                        self.mutate_reactive(ValueArgumentInputScreen.result)
+                        self.input_widget.value = ""
+                        self.input_widget.focus()
+                else:
+                    self.dismiss(self.input_widget.value)
+                event.stop()
+
             case "ctrl+g":
                 if self.input_widget.value:
                     self.input_widget.value = ""
@@ -86,13 +124,48 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
                         self.history.restart()
                 else:
                     self.dismiss(None)
-                    event.stop()
+                event.stop()
+
             case "down":
-                if self.with_history and (prev_value := self.history.prev) and (prev_value is not None):
+                if (
+                    self.with_history
+                    and (prev_value := self.history.prev)
+                    and (prev_value is not None)
+                ):
                     self.input_widget.value = prev_value
+                event.stop()
+
             case "up":
-                if self.with_history and (next_value := self.history.next) and (next_value is not None):
+                if (
+                    self.with_history
+                    and (next_value := self.history.next)
+                    and (next_value is not None)
+                ):
                     self.input_widget.value = next_value
+                event.stop()
+
+            case "left":
+                if not self.input_widget.value and self.result:
+                    self.highlighted = max(0, self.highlighted - 1)
+                    self.input_widget.focus()
+
+            case "right":
+                if not self.input_widget.value and self.result:
+                    self.highlighted = min(len(self.result) - 1, self.highlighted + 1)
+                    self.input_widget.focus()
+
+            case "backspace":
+                if not self.input_widget.value and self.result:
+                    self.result.pop(self.highlighted)
+                    self.mutate_reactive(ValueArgumentInputScreen.result)
+                    self.input_widget.focus()
+
+    def on_mount(self):
+        if self.with_history:
+            self.shelf = shelve.open(C.HISTORY_FILE, writeback=True)
+            self.history = History(
+                values=self.shelf.get(self.argument.name, deque()), cur_pos=-1
+            )
 
     def on_unmount(self):
         if self.with_history:
@@ -111,9 +184,11 @@ class MenuScreen(Screen):
         ("ctrl+g", "reset_or_pop", "Reset input / Go back"),
         ("tab", "complete_input", "Autocomplete"),
         ("backspace", "backspace_input", "Erase last character"),
+        ("slash", "change_mode", "Change mode"),
     ]
 
     cur_input = reactive("", recompose=True)
+    edit_mode = reactive(False, recompose=True)
 
     def __init__(self, menu: Menu, is_entrypoint: bool = False):
         super().__init__()
@@ -122,9 +197,14 @@ class MenuScreen(Screen):
         self.candidates = {**menu.arguments, **menu.menus, **menu.commands}
 
     def compose(self) -> ComposeResult:
-        yield Label(self.cur_input)
         for renderable in render_menu(self.menu, self.cur_input):
             yield Static(renderable)
+
+        mode = "edit" if self.edit_mode else "toggle"
+        yield Horizontal(
+            Label(self.cur_input, classes="cur-input"),
+            Label(f"Mode: {mode}", classes="mode"),
+        )
 
     def action_reset_or_pop(self):
         """Reset current input or pop screen if no input.
@@ -143,6 +223,9 @@ class MenuScreen(Screen):
         """Remove the last character from current input."""
         if self.cur_input:
             self.cur_input = self.cur_input[:-1]
+
+    def action_change_mode(self):
+        self.edit_mode = not self.edit_mode
 
     @work
     async def action_complete_input(self):
@@ -195,7 +278,9 @@ class MenuScreen(Screen):
         """
         match match_value:
             case Argument():
-                await self.process_argument(match_value)
+                await self.process_argument(
+                    match_value, action="edit" if self.edit_mode else "toggle"
+                )
             case Command():
                 command_result = await self.process_command(match_value)
                 if command_result is None:
@@ -224,11 +309,13 @@ class MenuScreen(Screen):
                 self.cur_input = ""
             case ChoiceArgument():
 
-                def set_argument_value_and_reset_input(value: int | None):
+                def set_argument_value_and_reset_input(value: int | List[str] | None):
                     if value is None:
                         argument.selected = None
+                    elif isinstance(value, int):
+                        argument.selected = [argument.choices[value]]
                     else:
-                        argument.selected = argument.choices[value]
+                        argument.selected = value
                     self.cur_input = ""
 
                 if argument.selected and action == "toggle":
@@ -248,7 +335,7 @@ class MenuScreen(Screen):
                     set_argument_value_and_reset_input(None)
                 else:
                     new_value = await self.app.push_screen_wait(
-                        ValueArgumentInputScreen(argument, argument.value),
+                        ValueArgumentInputScreen(argument),
                     )
                     set_argument_value_and_reset_input(new_value)
 
@@ -291,8 +378,7 @@ class MenuScreen(Screen):
                 case Deferred():
                     resolved_command.extend(part.evaluate(locals()))
 
-        self.app.command = resolved_command
-        self.app.exit(resolved_command)
+            self.app.exit(resolved_command)
 
     async def process_menu(self, menu: Menu):
         """Process a submenu by pushing a new menu screen.
@@ -340,7 +426,6 @@ class YakariApp(App):
                 self.menu = command_or_menu
             case _:
                 self.menu = Menu.from_toml(command_or_menu)
-        self.command = None
 
     def on_mount(self) -> None:
         menu_screen = MenuScreen(self.menu, is_entrypoint=True)
