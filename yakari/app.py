@@ -181,30 +181,53 @@ class MenuScreen(Screen):
     """
 
     BINDINGS = [
-        ("ctrl+g", "reset_or_pop", "Reset input / Go back"),
-        ("tab", "complete_input", "Autocomplete"),
-        ("backspace", "backspace_input", "Erase last character"),
-        ("slash", "change_mode", "Change mode"),
+        ("ctrl+g", "reset_or_pop", "Reset / Back"),
+        ("tab", "complete_input", "Complete"),
+        ("backspace", "backspace_input", "Erase"),
+        ("slash", "change_mode", "Toggle mode"),
     ]
 
     cur_input = reactive("", recompose=True)
     edit_mode = reactive(False, recompose=True)
 
-    def __init__(self, menu: Menu, is_entrypoint: bool = False):
+    def __init__(
+        self, menu: Menu, is_entrypoint: bool = False, ancestor_input: str = ""
+    ):
         super().__init__()
         self.menu = menu
         self.is_entrypoint = is_entrypoint
+        self.ancestor_input = ancestor_input
         self.candidates = {**menu.arguments, **menu.menus, **menu.commands}
 
     def compose(self) -> ComposeResult:
         for renderable in render_menu(self.menu, self.cur_input):
             yield Static(renderable)
 
-        mode = "edit" if self.edit_mode else "toggle"
-        yield Horizontal(
-            Label(self.cur_input, classes="cur-input"),
-            Label(f"Mode: {mode}", classes="mode"),
+        cur_input_display = Horizontal(
+            Label("Input:", classes="title"),
+            Label(self._get_full_input()),
+            id="cur-input",
         )
+
+        help_display = Horizontal(
+            Label("Bindings:", classes="title"),
+            Label("(backspace)", classes="help"),
+            Label("erase 1"),
+            Label("(ctrl+g)", classes="help"),
+            Label("erase all / go back"),
+            Label("(/)", classes="help"),
+            Label("toggle edit mode"),
+            Label("(ctrl+c)", classes="help"),
+            Label("quit"),
+            id="help-section",
+        )
+
+        is_edit_mode = "yes" if self.edit_mode else "no"
+        mode_display = Horizontal(
+            Label("Edit mode:", classes="title"), Label(is_edit_mode), id="mode"
+        )
+
+        yield Horizontal(cur_input_display, help_display, mode_display, id="footer")
 
     def action_reset_or_pop(self):
         """Reset current input or pop screen if no input.
@@ -217,7 +240,7 @@ class MenuScreen(Screen):
         elif self.is_entrypoint:
             self.app.exit()
         else:
-            self.app.pop_screen()
+            self.dismiss(None)
 
     def action_backspace_input(self):
         """Remove the last character from current input."""
@@ -226,6 +249,12 @@ class MenuScreen(Screen):
 
     def action_change_mode(self):
         self.edit_mode = not self.edit_mode
+
+    def _get_full_input(self) -> str:
+        full_input = self.cur_input
+        if self.ancestor_input:
+            full_input = f"{self.ancestor_input} >> {self.cur_input}"
+        return full_input
 
     @work
     async def action_complete_input(self):
@@ -259,6 +288,7 @@ class MenuScreen(Screen):
 
             # If we have an exact match, then process it
             if match_results.exact_match is not None:
+                self.cur_input = new_input
                 await self.process_match(self.candidates[new_input])
 
             # If we have partial matches, then we update the current
@@ -386,9 +416,8 @@ class MenuScreen(Screen):
         Args:
             menu (Menu): The submenu to display
         """
-
         menu._ancestors_arguments = self.menu.arguments
-        await self.app.push_screen_wait(MenuScreen(menu))
+        await self.app.push_screen_wait(MenuScreen(menu, ancestor_input=self._get_full_input()))
         self.cur_input = ""
 
     def string_matches_candidates(self, s: str) -> MatchResult:
@@ -412,9 +441,8 @@ class MenuScreen(Screen):
 
 class YakariApp(App):
     """Main application class for Yakari command-line interface."""
-
-    ENABLE_COMMAND_PALETTE = False
     CSS_PATH = "app.css"
+    COMMAND_PALETTE_BINDING = "question_mark"
     BINDINGS = [
         ("ctrl+g", "quit", "Exit"),
     ]

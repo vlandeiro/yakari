@@ -1,5 +1,5 @@
 ModalScreen Label {
-    background: $background-lighten-1;
+    background: $primary-background;
 }
 
 ModalScreen Horizontal {
@@ -25,21 +25,45 @@ ModalScreen OptionList {
     border: none;
 }
 
-MenuScreen Horizontal {
+Footer {
+    dock: top;
+}
+
+MenuScreen #footer {
     dock: bottom;
-    background: $background-lighten-3;
-    height: auto;
+    background: $background-lighten-1;
+    height: 1;
     width: 100%;
+    /* margin-bottom: 1; */
+    padding: 0;
+    /* border: solid green; */
 }
 
-MenuScreen .cur-input {
-    width: 90vw;
+MenuScreen Label {
+    margin: 0 1;
 }
 
-MenuScreen .mode {
+MenuScreen #cur-input {
+    width: 40vw;
+}
+
+MenuScreen #help-section {
+    width: 50vw;
+}
+
+MenuScreen #mode {
     width: 10vw;
-    min-width: 12;
     text-align: right;
+}
+
+Horizontal .title {
+    color: $accent-darken-1;
+    text-style: bold;
+}
+
+Horizontal .help {
+    color: $primary-lighten-3;
+    text-style: bold;
 }
 
 ValueArgumentInputScreen .result {
