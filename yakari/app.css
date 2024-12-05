@@ -1,7 +1,3 @@
-ModalScreen Label {
-    background: $primary-background;
-}
-
 ModalScreen Horizontal {
     dock: bottom;
     height: auto;
@@ -19,7 +15,7 @@ ModalScreen Input {
     padding: 0;
 }
 
-ModalScreen OptionList {
+ChoiceArgumentInputScreen OptionList {
     dock: bottom;
     margin: 0;
     border: none;
@@ -74,4 +70,14 @@ ValueArgumentInputScreen .result {
 
 ValueArgumentInputScreen .highlighted {
     background: $primary-darken-3;
+}
+
+ValueArgumentInputScreen OptionList#suggestions {
+    border: $accent wide;
+    width: auto;
+    height: auto;
+    min-width: 30;
+    max-width: 20%;
+    max-height: 40%;
+    offset: 40vw 30vh;
 }

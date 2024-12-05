@@ -61,7 +61,7 @@ async def test_argument_inputs(mock_app):
         # Call the command
         await pilot.press("t")
 
-        assert mock_app.command == ["mock_app", "--flag", "--value foo", "--choice b"]
+        assert mock_app.command == ["mock_app", "--flag", "--value", "foo", "--choice", "b"]
 
 
 @pytest.mark.asyncio

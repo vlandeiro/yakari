@@ -1,14 +1,21 @@
 import shelve
 from collections import deque
 from pathlib import Path
-from typing import Literal, List
+from typing import List, Literal
 
 from textual import events, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal
 from textual.reactive import reactive
 from textual.screen import ModalScreen, Screen
-from textual.widgets import Input, Label, OptionList, SelectionList, Static
+from textual.suggester import SuggestFromList
+from textual.widgets import (
+    Input,
+    Label,
+    OptionList,
+    SelectionList,
+    Static,
+)
 
 from . import constants as C
 from .rich_render import render_menu
@@ -79,7 +86,10 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         self.with_history = not argument.password
         self.label_widget = Label(f"{self.argument.name}=")
 
-        self.input_widget = Input(password=argument.password)
+        self._init_suggestions()
+
+        self.input_widget = Input(password=argument.password, suggester=self.suggester)
+
         if argument.multi and argument.value and isinstance(argument.value, list):
             self.result = argument.value
             self.highlighted = len(self.result) - 1
@@ -87,7 +97,34 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         elif argument.value:
             self.input_widget.value = argument.value
 
+    def _init_suggestions(self):
+        self.suggester = None
+        self.suggested_values = None
+        self.suggestions_widget = None
+
+        if self.argument.suggestions:
+            self.suggested_values = self.argument.suggestions.values
+            self.suggester = SuggestFromList(self.suggested_values)
+            self.suggestions_widget = self._make_suggestions_widget()
+
+    def _make_suggestions_widget(self) -> OptionList | None:
+        if not self.suggested_values:
+            return None
+
+        suggestions_widget = OptionList(
+            *self.suggested_values,
+            id="suggestions",
+        )
+        suggestions_widget.can_focus = False
+        suggestions_widget.border_title = "Suggested values"
+        suggestions_widget.BINDINGS = []
+
+        return suggestions_widget
+
     def compose(self) -> ComposeResult:
+        if self.suggestions_widget is not None:
+            yield self.suggestions_widget
+
         if self.argument.multi:
             parts = [self.label_widget]
             for idx, r in enumerate(self.result):
@@ -160,6 +197,10 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
                     self.mutate_reactive(ValueArgumentInputScreen.result)
                     self.input_widget.focus()
 
+    def on_option_list_option_selected(self, message: OptionList.OptionSelected):
+        self.input_widget.value = self.suggested_values[message.option_index]
+        message.stop()
+
     def on_mount(self):
         if self.with_history:
             self.shelf = shelve.open(C.HISTORY_FILE, writeback=True)
@@ -210,7 +251,7 @@ class MenuScreen(Screen):
         )
 
         help_display = Horizontal(
-            Label("Bindings:", classes="title"),
+            Label("Shortcuts:", classes="title"),
             Label("(backspace)", classes="help"),
             Label("erase 1"),
             Label("(ctrl+g)", classes="help"),
@@ -408,7 +449,8 @@ class MenuScreen(Screen):
                 case Deferred():
                     resolved_command.extend(part.evaluate(locals()))
 
-            self.app.exit(resolved_command)
+        self.app.command = resolved_command
+        self.app.exit(resolved_command)
 
     async def process_menu(self, menu: Menu):
         """Process a submenu by pushing a new menu screen.
@@ -417,7 +459,9 @@ class MenuScreen(Screen):
             menu (Menu): The submenu to display
         """
         menu._ancestors_arguments = self.menu.arguments
-        await self.app.push_screen_wait(MenuScreen(menu, ancestor_input=self._get_full_input()))
+        await self.app.push_screen_wait(
+            MenuScreen(menu, ancestor_input=self._get_full_input())
+        )
         self.cur_input = ""
 
     def string_matches_candidates(self, s: str) -> MatchResult:
@@ -441,6 +485,7 @@ class MenuScreen(Screen):
 
 class YakariApp(App):
     """Main application class for Yakari command-line interface."""
+
     CSS_PATH = "app.css"
     COMMAND_PALETTE_BINDING = "question_mark"
     BINDINGS = [
@@ -449,6 +494,7 @@ class YakariApp(App):
 
     def __init__(self, command_or_menu: str | Path | Menu):
         super().__init__()
+        self.command = None
         match command_or_menu:
             case Menu():
                 self.menu = command_or_menu

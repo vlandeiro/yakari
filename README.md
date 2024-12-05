@@ -9,20 +9,20 @@ user-friendly through contextual assistance.
 Powered by [pydantic](https://github.com/pydantic/pydantic) and
 [textual](https://github.com/Textualize/textual).
 
-**Roadmap**: 
+**Features**: 
 
 - [X] Interactive command building
 - [X] Contextual help and descriptions
 - [X] Works alongside existing CLI tools
 - [X] Command history across executions
-- [ ] Suggestions from other commands
-- Support argument types:
-  - [X] Support flag argument
-  - [X] Support single-value argument
-  - [X] Support multi-choice argument 
-  - [X] Support password argument
-  - [X] Support multi-value argument
-  - [ ] Support file argument
+- [X] Suggestions from other commands
+- Supported argument types:
+  - [X] Flag argument
+  - [X] Single-value argument
+  - [X] Multi-choice argument 
+  - [X] Password argument
+  - [X] Multi-value argument
+  - [ ] File argument
 
 ## How it works?
 

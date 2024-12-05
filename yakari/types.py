@@ -4,6 +4,7 @@ This module provides classes to represent actions, commands, command groups,
 and complete menu structures in a type-safe way using Pydantic data validation.
 """
 
+import subprocess
 from abc import ABC, abstractmethod
 from collections import deque
 from pathlib import Path
@@ -214,6 +215,35 @@ class ChoiceArgument(NamedArgument):
         return self.selected
 
 
+class SuggestionsList(BaseModel):
+    values: List[str]
+
+
+class SuggestionsCommand(BaseModel):
+    command: str
+    disable_caching: bool = False
+    _suggestions: List[str] = PrivateAttr(default_factory=list)
+
+    @property
+    def values(self):
+        if self.disable_caching or not self._suggestions:
+            result = subprocess.run(self.command, capture_output=True, shell=True)
+            if result.stderr:
+                raise RuntimeError(
+                    f"Command {self.command} failed with the following "
+                    f"message:\n{result.stderr.decode()}"
+                )
+            self._suggestions = [
+                line.strip()
+                for line in result.stdout.decode().split("\n")
+                if line.strip()
+            ]
+        return self._suggestions
+
+
+SuggestionsImpl = SuggestionsList | SuggestionsCommand
+
+
 class ValueArgument(NamedArgument):
     """
     Represents a command argument that accepts an arbitrary value.
@@ -229,6 +259,7 @@ class ValueArgument(NamedArgument):
         default=None, description="The value for this argument."
     )
     password: bool = False
+    suggestions: SuggestionsImpl | None = None
 
     @property
     def enabled(self):
