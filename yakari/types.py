@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Deque, Dict, List, Literal, Self
 
 import tomlkit
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr, model_validator
 
 from . import constants as C
 
@@ -141,9 +141,9 @@ class FlagArgument(Argument):
 
 class NamedArgument(Argument, ABC):
     name: str
-    separator: Literal["space"] | Literal["equal"] = "space"
+    separator: Literal["space"] | Literal["equal"] = C.DEFAULT_ARGUMENT_FIELDS["separator"]
     multi: bool = False
-    multi_style: Literal["repeat"] | str = ","
+    multi_style: Literal["repeat"] | str = C.DEFAULT_ARGUMENT_FIELDS["multi_style"]
 
     @property
     def positional(self):
@@ -295,6 +295,11 @@ class Command(BaseModel):
 Shortcut = str
 
 
+class MenuConfiguration(BaseModel):
+    separator: Literal["space"] | Literal["equal"] = C.DEFAULT_ARGUMENT_FIELDS["separator"]
+    multi_style: Literal["repeat"] | str = C.DEFAULT_ARGUMENT_FIELDS["multi_style"]
+
+
 class Menu(BaseModel):
     """
     Represents the complete menu structure containing groups of commands.
@@ -310,6 +315,7 @@ class Menu(BaseModel):
     arguments: Dict[Shortcut, ArgumentImpl] = Field(default_factory=dict)
     menus: Dict[Shortcut, Self] = Field(default_factory=dict)
     commands: Dict[Shortcut, Command] = Field(default_factory=dict)
+    configuration: MenuConfiguration = Field(default_factory=MenuConfiguration)
 
     _ancestors_arguments: Dict[Shortcut, Argument] = PrivateAttr(default_factory=dict)
 
@@ -323,9 +329,27 @@ class Menu(BaseModel):
 
         if not (config_path.exists() and config_path.is_file()):
             raise ValueError(
-                f"No configuration file for command '{command_name}' in {base_path}."
+                f"No configuration found for '{command_name}'."
             )
 
         with config_path.open("r") as fd:
             model = tomlkit.load(fd).unwrap()
         return cls.model_validate(model)
+
+    @model_validator(mode="after")
+    def set_default_fields(self) -> Self:
+        config_fields_set = self.configuration.model_fields_set
+
+        for arg in self.arguments.values():
+            arg_fields = arg.model_fields
+            arg_fields_set = arg.model_fields_set
+            for field_name in config_fields_set:
+                if field_name in arg_fields and field_name not in arg_fields_set:
+                    default_value = getattr(self.configuration, field_name)
+                    setattr(arg, field_name, default_value)
+
+        for menu in self.menus.values():
+            menu.configuration = self.configuration
+            menu.set_default_fields()
+
+        return self
