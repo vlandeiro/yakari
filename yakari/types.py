@@ -172,12 +172,12 @@ class NamedArgument(Argument, ABC):
 
         if self.multi_style == "repeat":
             result = []
-            for values in values:
+            for value in values:
                 match self.separator:
                     case "space":
-                        result.extend([self.name, values])
+                        result.extend([self.name, value])
                     case "equal":
-                        result.append(f"{self.name}={self.value}")
+                        result.append(f"{self.name}={value}")
             return result
 
         match self.separator:
