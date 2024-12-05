@@ -300,6 +300,16 @@ class MenuConfiguration(BaseModel):
     multi_style: Literal["repeat"] | str = C.DEFAULT_ARGUMENT_FIELDS["multi_style"]
 
 
+def set_default_arg_value(arg: Argument, config_fields_set: List[str], configuration: MenuConfiguration):
+    arg_fields = arg.model_fields
+    arg_fields_set = arg.model_fields_set
+    for field_name in config_fields_set:
+        if field_name in arg_fields and field_name not in arg_fields_set:
+            default_value = getattr(configuration, field_name)
+            setattr(arg, field_name, default_value)
+    return arg
+
+
 class Menu(BaseModel):
     """
     Represents the complete menu structure containing groups of commands.
@@ -340,16 +350,22 @@ class Menu(BaseModel):
     def set_default_fields(self) -> Self:
         config_fields_set = self.configuration.model_fields_set
 
+        # propagate defaults to menu arguments
         for arg in self.arguments.values():
-            arg_fields = arg.model_fields
-            arg_fields_set = arg.model_fields_set
-            for field_name in config_fields_set:
-                if field_name in arg_fields and field_name not in arg_fields_set:
-                    default_value = getattr(self.configuration, field_name)
-                    setattr(arg, field_name, default_value)
+            set_default_arg_value(arg, config_fields_set, self.configuration)
 
+        # propagate defaults to dynamic arguments in commands
+        for command in self.commands.values():
+            for part in command.template:
+                if isinstance(part, Argument):
+                    set_default_arg_value(part, config_fields_set, self.configuration)
+
+        # propagate the parent menu configuration to all child menus unless it
+        # was explicitly set
         for menu in self.menus.values():
-            menu.configuration = self.configuration
+            menu_fields_set = menu.model_fields_set
+            if "configuration" not in menu_fields_set:
+                menu.configuration = self.configuration
             menu.set_default_fields()
 
         return self
