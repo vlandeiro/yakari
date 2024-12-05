@@ -25,14 +25,20 @@ Footer {
     dock: top;
 }
 
+MenuScreen {
+    padding-top: 1;
+}
+
+MenuScreen > Static {
+    padding-left: 1;
+}
+
 MenuScreen #footer {
     dock: bottom;
     background: $background-lighten-1;
     height: 1;
     width: 100%;
-    /* margin-bottom: 1; */
     padding: 0;
-    /* border: solid green; */
 }
 
 MenuScreen Label {
