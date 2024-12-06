@@ -171,7 +171,7 @@ def render_arguments_group(
     return Padding(table, TABLE_PADDING)
 
 
-def render_menu(menu: Menu, user_input: str, sort_by_keys: bool = True):
+def render_menu(menu: Menu, user_input: str):
     """
     Generate a complete menu rendering including title, subcommands, arguments, and commands.
 
@@ -196,7 +196,7 @@ def render_menu(menu: Menu, user_input: str, sort_by_keys: bool = True):
         table = Table("key", "prefix", title="Subcommands", **TABLE_CONFIG)
         menu_items = (
             sorted(menu.menus.items(), key=lambda x: x[0].lower())
-            if sort_by_keys
+            if menu.configuration.sort_menus
             else menu.menus.items()
         )
         for key, prefix in menu_items:
@@ -209,7 +209,7 @@ def render_menu(menu: Menu, user_input: str, sort_by_keys: bool = True):
         for group_name, arguments in groups.items():
             arguments = (
                 sorted(arguments, key=lambda x: x[0].lower())
-                if sort_by_keys
+                if menu.configuration.sort_arguments
                 else arguments
             )
             yield render_arguments_group(group_name, arguments, user_input)
@@ -224,7 +224,7 @@ def render_menu(menu: Menu, user_input: str, sort_by_keys: bool = True):
         )
         commands_items = (
             sorted(menu.commands.items(), key=lambda x: x[0].lower())
-            if sort_by_keys
+            if menu.configuration.sort_commands
             else menu.commands.items()
         )
         for key, command in commands_items:

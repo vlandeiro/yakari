@@ -23,6 +23,7 @@ Powered by [pydantic](https://github.com/pydantic/pydantic) and
   - [X] Password argument
   - [X] Multi-value argument
   - [ ] File argument
+  - [ ] Default value from environment variable
 
 ## How it works?
 

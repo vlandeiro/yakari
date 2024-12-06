@@ -43,7 +43,7 @@ def test_history_init():
     history = History()
     assert isinstance(history.values, deque)
     assert len(history.values) == 0
-    assert history.cur_pos is None
+    assert history._cur_pos is None
 
 
 def test_add_empty_value():
@@ -82,14 +82,14 @@ def test_restart_empty():
     """Test restart with empty history."""
     history = History()
     history.restart()
-    assert history.cur_pos is None
+    assert history._cur_pos is None
 
 
 def test_restart_with_values():
     """Test restart with existing values."""
     history = History(values=deque(["test"]))
     history.restart()
-    assert history.cur_pos == -1
+    assert history._cur_pos == -1
 
 
 def test_current_no_position():
@@ -101,7 +101,7 @@ def test_current_no_position():
 def test_current_with_position():
     """Test current value with valid position."""
     history = History(values=deque(["test"]))
-    history.cur_pos = 0
+    history._cur_pos = 0
     assert history.current == "test"
 
 
@@ -114,17 +114,17 @@ def test_prev_no_position():
 def test_prev_wrap_around():
     """Test prev value wraps to start when at end."""
     history = History(values=deque(["test1", "test2"]))
-    history.cur_pos = 1
+    history._cur_pos = 1
     assert history.prev == "test1"
-    assert history.cur_pos == 0
+    assert history._cur_pos == 0
 
 
 def test_prev_normal_case():
     """Test prev value in normal case."""
     history = History(values=deque(["test1", "test2"]))
-    history.cur_pos = 0
+    history._cur_pos = 0
     assert history.prev == "test2"
-    assert history.cur_pos == 1
+    assert history._cur_pos == 1
 
 
 def test_next_no_position():
@@ -136,17 +136,17 @@ def test_next_no_position():
 def test_next_wrap_around():
     """Test next value wraps to end when at start."""
     history = History(values=deque(["test1", "test2"]))
-    history.cur_pos = 0
+    history._cur_pos = 0
     assert history.next == "test2"
-    assert history.cur_pos == 1
+    assert history._cur_pos == 1
 
 
 def test_next_normal_case():
     """Test next value in normal case."""
     history = History(values=deque(["test1", "test2"]))
-    history.cur_pos = 1
+    history._cur_pos = 1
     assert history.next == "test1"
-    assert history.cur_pos == 0
+    assert history._cur_pos == 0
 
 
 def test_suggestion_list():

@@ -29,7 +29,10 @@ class History(BaseModel):
     """A class managing command history with navigation capabilities."""
 
     values: Deque[str] = Field(default_factory=deque)
-    cur_pos: int | None = None
+    _cur_pos: int | None = PrivateAttr(default=None)
+
+    def model_post_init(self, context):
+        self.restart()
 
     def add(self, value: str):
         if not value:
@@ -39,37 +42,37 @@ class History(BaseModel):
 
     def restart(self):
         if not self.values:
-            self.cur_pos = None
+            self._cur_pos = None
             return
-        self.cur_pos = -1
+        self._cur_pos = -1
 
     @property
     def current(self) -> str | None:
-        if self.cur_pos is None:
+        if self._cur_pos is None:
             return None
-        return self.values[self.cur_pos]
+        return self.values[self._cur_pos]
 
     @property
     def prev(self) -> str | None:
-        if self.cur_pos is None:
+        if self._cur_pos is None:
             return None
-        prev_index = self.cur_pos + 1
+        prev_index = self._cur_pos + 1
         if prev_index >= len(self.values):
-            self.cur_pos = 0
+            self._cur_pos = 0
         else:
-            self.cur_pos = prev_index
-        return self.values[self.cur_pos]
+            self._cur_pos = prev_index
+        return self.values[self._cur_pos]
 
     @property
     def next(self) -> str | None:
-        if self.cur_pos is None:
+        if self._cur_pos is None:
             return None
-        next_index = self.cur_pos - 1
+        next_index = self._cur_pos - 1
         if next_index < 0:
-            self.cur_pos = len(self.values) - 1
+            self._cur_pos = len(self.values) - 1
         else:
-            self.cur_pos = next_index
-        return self.values[self.cur_pos]
+            self._cur_pos = next_index
+        return self.values[self._cur_pos]
 
 
 class MatchResult(BaseModel):
@@ -141,7 +144,9 @@ class FlagArgument(Argument):
 
 class NamedArgument(Argument, ABC):
     name: str
-    separator: Literal["space"] | Literal["equal"] = C.DEFAULT_ARGUMENT_FIELDS["separator"]
+    separator: Literal["space"] | Literal["equal"] = C.DEFAULT_ARGUMENT_FIELDS[
+        "separator"
+    ]
     multi: bool = False
     multi_style: Literal["repeat"] | str = C.DEFAULT_ARGUMENT_FIELDS["multi_style"]
 
@@ -295,17 +300,27 @@ class Command(BaseModel):
 Shortcut = str
 
 
-class MenuConfiguration(BaseModel):
-    separator: Literal["space"] | Literal["equal"] = C.DEFAULT_ARGUMENT_FIELDS["separator"]
+class ArgumentDefaults(BaseModel):
+    separator: Literal["space"] | Literal["equal"] = C.DEFAULT_ARGUMENT_FIELDS[
+        "separator"
+    ]
     multi_style: Literal["repeat"] | str = C.DEFAULT_ARGUMENT_FIELDS["multi_style"]
 
 
-def set_default_arg_value(arg: Argument, config_fields_set: List[str], configuration: MenuConfiguration):
+class MenuConfiguration(BaseModel):
+    argument_defaults: ArgumentDefaults = Field(default_factory=ArgumentDefaults)
+    sort_arguments: bool = True
+    sort_commands: bool = True
+    sort_menus: bool = True
+
+
+def set_default_arg_value(arg: Argument, configuration: MenuConfiguration):
+    config_fields_set = configuration.argument_defaults.model_fields_set
     arg_fields = arg.model_fields
     arg_fields_set = arg.model_fields_set
     for field_name in config_fields_set:
         if field_name in arg_fields and field_name not in arg_fields_set:
-            default_value = getattr(configuration, field_name)
+            default_value = getattr(configuration.argument_defaults, field_name)
             setattr(arg, field_name, default_value)
     return arg
 
@@ -338,9 +353,7 @@ class Menu(BaseModel):
             config_path = (base_path / command_name).with_suffix(".toml")
 
         if not (config_path.exists() and config_path.is_file()):
-            raise ValueError(
-                f"No configuration found for '{command_name}'."
-            )
+            raise ValueError(f"No configuration found for '{command_name}'.")
 
         with config_path.open("r") as fd:
             model = tomlkit.load(fd).unwrap()
@@ -352,13 +365,13 @@ class Menu(BaseModel):
 
         # propagate defaults to menu arguments
         for arg in self.arguments.values():
-            set_default_arg_value(arg, config_fields_set, self.configuration)
+            set_default_arg_value(arg, self.configuration)
 
         # propagate defaults to dynamic arguments in commands
         for command in self.commands.values():
             for part in command.template:
                 if isinstance(part, Argument):
-                    set_default_arg_value(part, config_fields_set, self.configuration)
+                    set_default_arg_value(part, self.configuration)
 
         # propagate the parent menu configuration to all child menus unless it
         # was explicitly set
