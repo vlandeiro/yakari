@@ -205,7 +205,7 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         if self.with_history:
             self.shelf = shelve.open(C.HISTORY_FILE, writeback=True)
             self.history = History(
-                values=self.shelf.get(self.argument.name, deque()), cur_pos=-1
+                values=self.shelf.get(self.argument.name, deque())
             )
 
     def on_unmount(self):
