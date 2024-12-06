@@ -41,14 +41,14 @@ class History(BaseModel):
             self.values.appendleft(value)
 
     def restart(self):
-        if not self.values:
+        if self.values:
+            self._cur_pos = -1
+        else:
             self._cur_pos = None
-            return
-        self._cur_pos = -1
 
     @property
     def current(self) -> str | None:
-        if self._cur_pos is None:
+        if self._cur_pos is None or self._cur_pos == -1:
             return None
         return self.values[self._cur_pos]
 
