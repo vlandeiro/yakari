@@ -4,13 +4,11 @@ from yakari.app import YakariApp
 from yakari.types import (
     ChoiceArgument,
     Command,
-    Deferred,
+    MenuArguments,
     FlagArgument,
     Menu,
     ValueArgument,
 )
-
-OPTIONAL_ARGUMENTS = Deferred(varname="optional_arguments")
 
 
 @pytest.fixture
@@ -22,7 +20,7 @@ def mock_app():
             "t": Command(
                 name="Test Command",
                 description="Test description",
-                template=["mock_app", OPTIONAL_ARGUMENTS],
+                template=["mock_app", MenuArguments()],
             ),
         },
         arguments={

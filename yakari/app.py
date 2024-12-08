@@ -25,7 +25,7 @@ from .types import (
     Argument,
     ChoiceArgument,
     Command,
-    Deferred,
+    MenuArguments,
     FlagArgument,
     History,
     MatchResult,
@@ -471,17 +471,6 @@ class MenuScreen(Screen):
         with the final command.
         """
 
-        optional_arguments = []
-        all_arguments = {**self.menu._ancestors_arguments, **self.menu.arguments}
-        for key, argument in all_arguments.items():
-            if argument.enabled:
-                rendered_argument = argument.render_template()
-                match rendered_argument:
-                    case str():
-                        optional_arguments.append(rendered_argument)
-                    case list():
-                        optional_arguments.extend(rendered_argument)
-
         resolved_command = []
         for part in command.template:
             match part:
@@ -497,8 +486,16 @@ class MenuScreen(Screen):
                             resolved_command.append(rendered_argument)
                         case list():
                             resolved_command.extend(rendered_argument)
-                case Deferred():
-                    resolved_command.extend(part.evaluate(locals()))
+                case MenuArguments():
+                    arguments = part.resolve_arguments(self.menu)
+                    for key, argument in arguments.items():
+                        if argument.enabled:
+                            rendered_argument = argument.render_template()
+                            match rendered_argument:
+                                case str():
+                                    resolved_command.append(rendered_argument)
+                                case list():
+                                    resolved_command.extend(rendered_argument)
 
         self.app.command = resolved_command
         self.app.exit(resolved_command)

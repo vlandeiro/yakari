@@ -8,7 +8,7 @@ import subprocess
 from abc import ABC, abstractmethod
 from collections import deque
 from pathlib import Path
-from typing import Any, Deque, Dict, List, Literal, Self
+from typing import Deque, Dict, List, Literal, Self
 
 import tomlkit
 from pydantic import BaseModel, Field, PrivateAttr, model_validator
@@ -16,13 +16,7 @@ from pydantic import BaseModel, Field, PrivateAttr, model_validator
 from . import constants as C
 
 
-class Deferred(BaseModel):
-    """A class representing a deferred value that will be evaluated at runtime from a variable."""
-
-    varname: str
-
-    def evaluate(self, context: Dict[str, Any]):
-        return context[self.varname]
+Shortcut = str
 
 
 class History(BaseModel):
@@ -281,6 +275,33 @@ class ValueArgument(NamedArgument):
 ArgumentImpl = FlagArgument | ValueArgument | ChoiceArgument
 
 
+class MenuArguments(BaseModel):
+    include: Literal["*"] | List[str] = "*"
+    exclude: List[str] | None = None
+    scope: Literal["this"] | Literal["all"] = "all"
+
+    def resolve_arguments(self, menu: "Menu") -> Dict[Shortcut, Argument]:
+        arguments = dict()
+        if self.scope == "all":
+            arguments.update(menu._ancestors_arguments)
+        arguments.update(menu.arguments)
+
+        if self.include != "*":
+            arguments = {
+                shortcut: arg
+                for shortcut, arg in arguments.items()
+                if shortcut in self.include
+            }
+        if self.exclude:
+            arguments = {
+                shortcut: arg
+                for shortcut, arg in arguments.items()
+                if shortcut not in self.exclude
+            }
+
+        return arguments
+
+
 class Command(BaseModel):
     """
     Represents a command with configurable arguments and template-based execution.
@@ -288,19 +309,16 @@ class Command(BaseModel):
     Attributes:
         name (str): Unique identifier/name for the command
         description (str): Optional description explaining the command's purpose
-        template (List[str | Deferred | ArgumentImpl]): List of components that make up the
+        template (List[str | MenuArguments | ArgumentImpl]): List of components that make up the
             command, can include raw strings, deferred values, and various argument types
     """
 
     name: str
     description: str = ""
-    template: List[str | Deferred | ArgumentImpl]
+    template: List[str | MenuArguments | ArgumentImpl]
 
 
-Shortcut = str
-
-
-class ArgumentDefaults(BaseModel):
+class NamedArgumentsStyle(BaseModel):
     separator: Literal["space"] | Literal["equal"] = C.DEFAULT_ARGUMENT_FIELDS[
         "separator"
     ]
@@ -308,19 +326,19 @@ class ArgumentDefaults(BaseModel):
 
 
 class MenuConfiguration(BaseModel):
-    argument_defaults: ArgumentDefaults = Field(default_factory=ArgumentDefaults)
+    named_arguments_style: NamedArgumentsStyle = Field(default_factory=NamedArgumentsStyle)
     sort_arguments: bool = True
     sort_commands: bool = True
     sort_menus: bool = True
 
 
 def set_default_arg_value(arg: Argument, configuration: MenuConfiguration):
-    config_fields_set = configuration.argument_defaults.model_fields_set
+    config_fields_set = configuration.named_arguments_style.model_fields_set
     arg_fields = arg.model_fields
     arg_fields_set = arg.model_fields_set
     for field_name in config_fields_set:
         if field_name in arg_fields and field_name not in arg_fields_set:
-            default_value = getattr(configuration.argument_defaults, field_name)
+            default_value = getattr(configuration.named_arguments_style, field_name)
             setattr(arg, field_name, default_value)
     return arg
 
@@ -361,8 +379,6 @@ class Menu(BaseModel):
 
     @model_validator(mode="after")
     def set_default_fields(self) -> Self:
-        config_fields_set = self.configuration.model_fields_set
-
         # propagate defaults to menu arguments
         for arg in self.arguments.values():
             set_default_arg_value(arg, self.configuration)

@@ -1,41 +1,7 @@
 import pytest
 from collections import deque
-from yakari.types import Deferred, History, SuggestionsList, SuggestionsCommand
+from yakari.types import MenuArguments, History, SuggestionsList, SuggestionsCommand
 from unittest.mock import patch
-
-
-def test_deferred_init():
-    """Test Deferred initialization with varname."""
-    deferred = Deferred(varname="test_var")
-    assert deferred.varname == "test_var"
-
-
-def test_evaluate_custom_context():
-    """Test evaluating with context dictionary."""
-    context = {"test_var": "context_value"}
-    deferred = Deferred(varname="test_var")
-    assert deferred.evaluate(context) == "context_value"
-
-
-def test_evaluate_missing_var():
-    """Test evaluating a non-existent variable raises KeyError."""
-    deferred = Deferred(varname="nonexistent_var")
-    with pytest.raises(KeyError):
-        deferred.evaluate({"foo": "bar"})
-
-
-def test_evaluate_empty_context():
-    """Test evaluating with empty context dictionary raises KeyError."""
-    deferred = Deferred(varname="test_var")
-    with pytest.raises(KeyError):
-        deferred.evaluate({})
-
-
-def test_evaluate_nested_context():
-    """Test evaluating with nested context dictionaries."""
-    outer_context = {"inner": {"test_var": "nested_value"}}
-    deferred = Deferred(varname="inner")
-    assert deferred.evaluate(outer_context) == {"test_var": "nested_value"}
 
 
 def test_history_init():
