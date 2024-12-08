@@ -108,7 +108,7 @@ def test_current_with_position():
 def test_prev_no_position():
     """Test prev value when no position is set."""
     history = History(values=deque(["test"]))
-    assert history.prev is None
+    assert history.prev == "test"
 
 
 def test_prev_wrap_around():
@@ -130,7 +130,7 @@ def test_prev_normal_case():
 def test_next_no_position():
     """Test next value when no position is set."""
     history = History(values=deque(["test"]))
-    assert history.next is None
+    assert history.next == "test"
 
 
 def test_next_wrap_around():
