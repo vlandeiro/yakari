@@ -5,6 +5,8 @@ and complete menu structures in a type-safe way using Pydantic data validation.
 """
 
 import subprocess
+import urllib
+import urllib.request
 from abc import ABC, abstractmethod
 from collections import deque
 from pathlib import Path
@@ -373,9 +375,19 @@ class Menu(YakariType):
 
     @classmethod
     def from_toml(cls, command_name: str | Path) -> Self:
-        if isinstance(command_name, Path):
+        print(command_name)
+        if isinstance(command_name, Path):  # local path
             config_path = command_name
-        else:
+
+        elif command_name.startswith(("http://", "https://")):  # url
+            url = command_name
+            parsed_url = urllib.parse.urlparse(url)
+            filename = urllib.parse.unquote(Path(parsed_url.path).name)
+            config_path = C.YAKARI_HOME / C.TEMPORARY_CONFIGURATIONS_DIR / filename
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+            urllib.request.urlretrieve(url, config_path)
+
+        else:  # command name
             base_path = C.YAKARI_HOME / C.CONFIGURATIONS_DIR
             config_path = (base_path / command_name).with_suffix(".toml")
 

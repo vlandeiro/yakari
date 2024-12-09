@@ -95,7 +95,7 @@ template = ["echo", { include = "*" }]
 [menus.c.commands.e]
 name = "exclude"
 description = "Command that excludes some arguments."
-template = ["echo", { exclude = ["-p", "-f"] }]
+template = ["echo", { include = "*", exclude = ["-p", "-f"] }]
 
 [menus.c.commands.i]
 name = "include"

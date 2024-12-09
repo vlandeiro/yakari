@@ -7,6 +7,7 @@ DEFAULT_ARGUMENT_FIELDS = {"separator": "space", "multi_style": ","}
 DEFAULT_YAKARI_HOME = Path(os.environ["HOME"]) / ".config" / "yakari"
 YAKARI_HOME = Path(os.environ.get("YAKARI_HOME", DEFAULT_YAKARI_HOME))
 CONFIGURATIONS_DIR = "configurations"
+TEMPORARY_CONFIGURATIONS_DIR = "temporary_configurations"
 HISTORY_FILENAME = "history"
 HISTORY_FILE = YAKARI_HOME / HISTORY_FILENAME
 
