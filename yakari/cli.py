@@ -1,5 +1,5 @@
 import argparse
-import sys
+import subprocess
 
 from .app import YakariApp
 
@@ -22,12 +22,9 @@ def main():
     args = parser.parse_args()
 
     app = YakariApp(args.command_name, args.dry_run, not args.native)
-    result = app.run()
-
-    if result is not None:
-        print(result.stderr, file=sys.stderr)
-        print(result.stdout, file=sys.stdout)
-
+    command = app.run()
+    if command:
+        subprocess.run(command)
 
 if __name__ == "__main__":
     main()

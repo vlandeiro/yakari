@@ -4,7 +4,7 @@
 
 Transform complex command-line interfaces into guided, interactive experiences. Yakari
 helps users build commands step by step, making CLI tools more accessible and
-user-friendly through contextual assistance.
+user-friendly.
 
 Powered by [pydantic](https://github.com/pydantic/pydantic) and
 [textual](https://github.com/Textualize/textual).

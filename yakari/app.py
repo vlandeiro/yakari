@@ -274,13 +274,14 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
 
 class ResultScreen(ModalScreen):
     BINDINGS = [
-        ("ctrl+g", "pop_screen", "Pop Screen"),
-        ("enter", "pop_screen", "Pop Screen"),
+        ("q", "pop_screen", "Quit"),
+        ("ctrl+g", "pop_screen", "Quit"),
+        ("slash", "pop_screen", "Quit"),
     ]
 
     def __init__(self):
         super().__init__()
-        self.log_widget = RichLog(highlight=True, wrap=True, markup=True)
+        self.log_widget = RichLog(highlight=True, wrap=True)
 
     def compose(self) -> ComposeResult:
         yield self.log_widget
@@ -298,9 +299,10 @@ class MenuScreen(Screen):
 
     BINDINGS = [
         ("ctrl+g", "reset_or_pop", "Reset / Back"),
+        ("slash", "show_results", "Show Results"),
         ("tab", "complete_input", "Complete"),
         ("backspace", "backspace_input", "Erase"),
-        ("slash", "change_mode", "Toggle mode"),
+        ("ctrl+e", "change_mode", "Toggle mode"),
     ]
 
     cur_input = reactive("", recompose=True)
@@ -320,23 +322,23 @@ class MenuScreen(Screen):
             yield Static(renderable)
 
         cur_input_display = Horizontal(
-            Label("Input:", classes="title"),
             Label(self._get_full_input()),
             id="cur-input",
         )
 
-        help_display = Horizontal(
-            Label("Shortcuts:", classes="title"),
-            Label("(backspace)", classes="help"),
-            Label("erase 1"),
-            Label("(ctrl+g)", classes="help"),
-            Label("erase all / go back"),
-            Label("(/)", classes="help"),
-            Label("toggle edit mode"),
-            Label("(ctrl+c)", classes="help"),
-            Label("quit"),
-            id="help-section",
-        )
+        shortcut_description = dict()
+        if self.app.inplace:
+            shortcut_description["/"] = "toggle results"
+        shortcut_description["backspace"] = "erase 1"
+        shortcut_description["ctrl+g"] = "reset / go back"
+        shortcut_description["ctrl+e"] = "toggle edit mode"
+        shortcut_description["ctrl+c"] = "quit"
+
+        labels = [Label("Shortcuts:", classes="title")]
+        for shortcut, description in shortcut_description.items():
+            labels.append(Label(f"({shortcut})", classes="help"))
+            labels.append(Label(description))
+        help_display = Horizontal(*labels, id="help-section")
 
         is_edit_mode = "yes" if self.edit_mode else "no"
         mode_display = Horizontal(
@@ -344,6 +346,10 @@ class MenuScreen(Screen):
         )
 
         yield Horizontal(cur_input_display, help_display, mode_display, id="footer")
+
+    def action_show_results(self):
+        if self.app.inplace:
+            self.app.push_screen("results")
 
     def action_reset_or_pop(self):
         """Reset current input or pop screen if no input.
@@ -527,7 +533,7 @@ class MenuScreen(Screen):
 
         logw: RichLog = self.app.results_screen.log_widget
         command_str = " ".join(resolved_command)
-        logw.write(Syntax(f"$> {command_str}", "bash"))
+        logw.write(Text(f"$> {command_str}"))
 
         if self.app.inplace:
             self.app.push_screen("results")
@@ -536,14 +542,23 @@ class MenuScreen(Screen):
             if not self.app.inplace:
                 self.app.exit()
         else:
-            result = subprocess.run(resolved_command, capture_output=True)
             if self.app.inplace:
+                result = subprocess.run(resolved_command, capture_output=True)
                 if result.stderr:
                     logw.write(Text(result.stderr.decode(), style=ERROR_STYLE))
                 if result.stdout:
-                    logw.write(Syntax(result.stdout.decode(), "bash"))
+                    logw.write(
+                        Syntax(
+                            result.stdout.decode(),
+                            command.lexer or "bash",
+                            indent_guides=True,
+                            word_wrap=True,
+                            padding=1,
+                        ),
+                        scroll_end=True,
+                    )
             else:
-                self.app.exit(result)
+                self.app.exit(resolved_command)
 
     async def process_menu(self, menu: Menu):
         """Process a submenu by pushing a new menu screen.
@@ -586,7 +601,10 @@ class YakariApp(App):
     ]
 
     def __init__(
-        self, command_or_menu: str | Path | Menu, dry_run: bool=False, inplace: bool=False
+        self,
+        command_or_menu: str | Path | Menu,
+        dry_run: bool = False,
+        inplace: bool = False,
     ):
         super().__init__()
         self.command = None

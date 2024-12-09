@@ -43,21 +43,28 @@ description = "Named argument with arbitrary value and a default."
 name = "--multi-named"
 multi = true
 suggestions = { values = ["banana", "apple", "peach"] }
-description = "Named argument with multiple arbitrary values and suggestions."
+description = "Named argument with multiple arbitrary values and hard-coded suggestions."
+
+[menus.a.arguments.--ds]
+name = "--dynamic-suggestion"
+description = "Named argument with dynamic suggestions."
+suggestions = { command = "ls -1" }
 
 [menus.a.arguments.-c]
 name = "--single-choice"
+description = "Single choice named argument."
 choices = ["python", "rust", "dotnet", "typescript"]
 
 [menus.a.arguments.--mc]
 name = "--multi-choice"
+description = "Multiple choice named argument."
 multi = true
 choices = ["jazz", "blues", "npr news"]
 
 [menus.a.arguments.--pwd]
 name = "--password"
+description = "Password-like argument (obfuscated)."
 password = true
-description = "Password-like arguments (obfuscated)."
 
 [menus.a.commands.d]
 name = "display"

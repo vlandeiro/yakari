@@ -316,6 +316,7 @@ class Command(BaseModel):
     name: str
     description: str = ""
     template: List[str | MenuArguments | ArgumentImpl]
+    lexer: str | None = None
 
 
 class NamedArgumentsStyle(BaseModel):
@@ -326,7 +327,9 @@ class NamedArgumentsStyle(BaseModel):
 
 
 class MenuConfiguration(BaseModel):
-    named_arguments_style: NamedArgumentsStyle = Field(default_factory=NamedArgumentsStyle)
+    named_arguments_style: NamedArgumentsStyle = Field(
+        default_factory=NamedArgumentsStyle
+    )
     sort_arguments: bool = True
     sort_commands: bool = True
     sort_menus: bool = True
