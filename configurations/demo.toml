@@ -13,8 +13,8 @@ sort_arguments = false
 # different from one CLI to the next. This section lets you update the style so
 # Yakari matches your target CLI.
 
-separator = "equal"       # MUST be one of "equal" or "space"
-multi_style = "repeat"    # MUST be "repeat" or a single character like " " or ","
+separator = "equal"    # MUST be one of "equal" or "space"
+multi_style = "repeat" # MUST be "repeat" or a single character like " " or ","
 
 # You can optionally define parent arguments that will be automatically
 # used in lower-level menus.
@@ -62,7 +62,7 @@ description = "Password-like arguments (obfuscated)."
 [menus.a.commands.d]
 name = "display"
 description = "Echo all the defined arguments"
-template = ["echo", {include = "*"}]
+template = ["echo", { include = "*" }]
 
 
 # Showcase ways to define commands with Yakari
@@ -83,23 +83,26 @@ description = "Named argument with arbitrary value."
 [menus.c.commands.a]
 name = "all"
 description = "Command that uses *all* the arguments defined in the menu"
-template = [ "echo", {include = "*"} ]
+template = ["echo", { include = "*" }]
 
 [menus.c.commands.e]
 name = "exclude"
 description = "Command that excludes some arguments."
-template = [ "echo", { exclude = ["-p", "-f"] } ]
+template = ["echo", { exclude = ["-p", "-f"] }]
 
 [menus.c.commands.i]
 name = "include"
 description = "Command that includes a specific list of arguments."
-template = [ "echo", { include = ["-f", "-n"] } ]
+template = ["echo", { include = ["-f", "-n"] }]
 
 [menus.c.commands.d]
 name = "dynamic"
 description = "Command that prompt the user for dynamic arguments"
 template = [
   "echo",
-  { name="-m" },
-  { name="-E", value=["banana", "apple"], multi=true },
+  { name = "-m" },
+  { name = "-E", value = [
+    "banana",
+    "apple",
+  ], multi = true },
 ]
