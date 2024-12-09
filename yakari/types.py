@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Deque, Dict, List, Literal, Self
 
 import tomlkit
-from pydantic import BaseModel, Field, PrivateAttr, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 from . import constants as C
 
@@ -19,7 +19,11 @@ from . import constants as C
 Shortcut = str
 
 
-class History(BaseModel):
+class YakariType(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class History(YakariType):
     """A class managing command history with navigation capabilities."""
 
     values: Deque[str] = Field(default_factory=deque)
@@ -69,7 +73,7 @@ class History(BaseModel):
         return self.values[self._cur_pos]
 
 
-class MatchResult(BaseModel):
+class MatchResult(YakariType):
     """
     Represents the result of a command/argument matching operation.
 
@@ -82,7 +86,7 @@ class MatchResult(BaseModel):
     partial_matches: List[str] = Field(default_factory=list)
 
 
-class Argument(BaseModel):
+class Argument(YakariType):
     """
     Base class for all command arguments, providing common functionality.
 
@@ -199,7 +203,7 @@ class ChoiceArgument(NamedArgument):
     choices: List[str] = Field(
         description="A list of available values for this argument."
     )
-    selected: List[str] | None = Field(
+    selected: str | List[str] | None = Field(
         default=None,
         description="The selection value for this argument.",
     )
@@ -211,14 +215,16 @@ class ChoiceArgument(NamedArgument):
     def get_value_list(self):
         if self.selected is None:
             return None
+        elif isinstance(self.selected, str):
+            return [self.selected]
         return self.selected
 
 
-class SuggestionsList(BaseModel):
+class SuggestionsList(YakariType):
     values: List[str]
 
 
-class SuggestionsCommand(BaseModel):
+class SuggestionsCommand(YakariType):
     command: str
     disable_caching: bool = False
     _suggestions: List[str] = PrivateAttr(default_factory=list)
@@ -275,8 +281,8 @@ class ValueArgument(NamedArgument):
 ArgumentImpl = FlagArgument | ValueArgument | ChoiceArgument
 
 
-class MenuArguments(BaseModel):
-    include: Literal["*"] | List[str] = "*"
+class MenuArguments(YakariType):
+    include: Literal["*"] | List[str]
     exclude: List[str] | None = None
     scope: Literal["this"] | Literal["all"] = "all"
 
@@ -302,7 +308,7 @@ class MenuArguments(BaseModel):
         return arguments
 
 
-class Command(BaseModel):
+class Command(YakariType):
     """
     Represents a command with configurable arguments and template-based execution.
 
@@ -319,14 +325,14 @@ class Command(BaseModel):
     lexer: str | None = None
 
 
-class NamedArgumentsStyle(BaseModel):
+class NamedArgumentsStyle(YakariType):
     separator: Literal["space"] | Literal["equal"] = C.DEFAULT_ARGUMENT_FIELDS[
         "separator"
     ]
     multi_style: Literal["repeat"] | str = C.DEFAULT_ARGUMENT_FIELDS["multi_style"]
 
 
-class MenuConfiguration(BaseModel):
+class MenuConfiguration(YakariType):
     named_arguments_style: NamedArgumentsStyle = Field(
         default_factory=NamedArgumentsStyle
     )
@@ -346,7 +352,7 @@ def set_default_arg_value(arg: Argument, configuration: MenuConfiguration):
     return arg
 
 
-class Menu(BaseModel):
+class Menu(YakariType):
     """
     Represents the complete menu structure containing groups of commands.
 
