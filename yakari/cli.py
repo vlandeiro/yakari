@@ -17,7 +17,7 @@ def main():
         "-n",
         "--native",
         action="store_true",
-        help="When toggled, run the command in the original shell instead of within the Yakari menu."
+        help="When toggled, run the command in the original shell instead of within the Yakari menu.",
     )
     args = parser.parse_args()
 
@@ -25,6 +25,7 @@ def main():
     command = app.run()
     if command:
         subprocess.run(command)
+
 
 if __name__ == "__main__":
     main()

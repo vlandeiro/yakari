@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import List, Literal
 
 from rich.text import Text
-from rich.rule import Rule
 from rich.syntax import Syntax
 from textual import events, work
 from textual.app import App, ComposeResult
