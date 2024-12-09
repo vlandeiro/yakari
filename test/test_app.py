@@ -34,7 +34,7 @@ def mock_app():
             ),
         },
     )
-    app = YakariApp(menu)
+    app = YakariApp(menu, dry_run=True)
     return app
 
 

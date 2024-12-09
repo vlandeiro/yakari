@@ -22,6 +22,7 @@ TABLE_PADDING = (1, 0, 1, 0)
 DIM_STYLE = Style(dim=True)
 ENABLED_STYLE = Style(color="green", italic=True)
 HIGHLIGHT_STYLE = Style(color="green", bold=True)
+ERROR_STYLE = Style(color="red")
 
 
 def should_dim(key: str, user_input: str) -> str:

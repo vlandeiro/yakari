@@ -1,8 +1,12 @@
 import shelve
+import subprocess
 from collections import deque
 from pathlib import Path
 from typing import List, Literal
 
+from rich.text import Text
+from rich.rule import Rule
+from rich.syntax import Syntax
 from textual import events, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
@@ -13,6 +17,7 @@ from textual.widgets import (
     Input,
     Label,
     OptionList,
+    RichLog,
     SelectionList,
     Static,
 )
@@ -20,7 +25,7 @@ from textual.widget import Widget
 from textual.message import Message
 
 from . import constants as C
-from .rich_render import render_menu
+from .rich_render import render_menu, ERROR_STYLE
 from .types import (
     Argument,
     ChoiceArgument,
@@ -119,7 +124,9 @@ class ArgumentInput(Widget):
             if self.argument.multi:
                 parts = []
                 for idx, r in enumerate(self.result):
-                    classes = "result highlighted" if idx == self.highlighted else "result"
+                    classes = (
+                        "result highlighted" if idx == self.highlighted else "result"
+                    )
                     parts.append(Label(r, classes=classes))
                 parts.append(self.input_widget)
                 yield Horizontal(*parts, classes="highlights")
@@ -265,6 +272,23 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         message.stop()
 
 
+class ResultScreen(ModalScreen):
+    BINDINGS = [
+        ("ctrl+g", "pop_screen", "Pop Screen"),
+        ("enter", "pop_screen", "Pop Screen"),
+    ]
+
+    def __init__(self):
+        super().__init__()
+        self.log_widget = RichLog(highlight=True, wrap=True, markup=True)
+
+    def compose(self) -> ComposeResult:
+        yield self.log_widget
+
+    def action_pop_screen(self):
+        self.app.pop_screen()
+
+
 class MenuScreen(Screen):
     """Main screen showing the menu interface and handling user input.
 
@@ -382,6 +406,7 @@ class MenuScreen(Screen):
             if match_results.exact_match is not None:
                 self.cur_input = new_input
                 await self.process_match(self.candidates[new_input])
+                event.stop()
 
             # If we have partial matches, then we update the current
             # input with the new character
@@ -404,9 +429,10 @@ class MenuScreen(Screen):
                     match_value, action="edit" if self.edit_mode else "toggle"
                 )
             case Command():
-                command_result = await self.process_command(match_value)
-                if command_result is None:
+                command = await self.process_command(match_value)
+                if command is None:
                     return
+
             case Menu():
                 await self.process_menu(match_value)
 
@@ -470,7 +496,6 @@ class MenuScreen(Screen):
         Resolves the command template with argument values and exits app
         with the final command.
         """
-
         resolved_command = []
         for part in command.template:
             match part:
@@ -498,7 +523,27 @@ class MenuScreen(Screen):
                                     resolved_command.extend(rendered_argument)
 
         self.app.command = resolved_command
-        self.app.exit(resolved_command)
+        self.cur_input = ""
+
+        logw: RichLog = self.app.results_screen.log_widget
+        command_str = " ".join(resolved_command)
+        logw.write(Syntax(f"$> {command_str}", "bash"))
+
+        if self.app.inplace:
+            self.app.push_screen("results")
+
+        if self.app.dry_run:
+            if not self.app.inplace:
+                self.app.exit()
+        else:
+            result = subprocess.run(resolved_command, capture_output=True)
+            if self.app.inplace:
+                if result.stderr:
+                    logw.write(Text(result.stderr.decode(), style=ERROR_STYLE))
+                if result.stdout:
+                    logw.write(Syntax(result.stdout.decode(), "bash"))
+            else:
+                self.app.exit(result)
 
     async def process_menu(self, menu: Menu):
         """Process a submenu by pushing a new menu screen.
@@ -540,16 +585,23 @@ class YakariApp(App):
         ("ctrl+g", "quit", "Exit"),
     ]
 
-    def __init__(self, command_or_menu: str | Path | Menu):
+    def __init__(
+        self, command_or_menu: str | Path | Menu, dry_run: bool=False, inplace: bool=False
+    ):
         super().__init__()
         self.command = None
+        self.dry_run = dry_run
+        self.inplace = inplace
+
         match command_or_menu:
             case Menu():
                 self.menu = command_or_menu
             case _:
                 self.menu = Menu.from_toml(command_or_menu)
+        self.menu_screen = MenuScreen(self.menu, is_entrypoint=True)
+        self.results_screen = ResultScreen()
 
     def on_mount(self) -> None:
-        menu_screen = MenuScreen(self.menu, is_entrypoint=True)
-        self.install_screen(menu_screen, self.menu.name)
+        self.install_screen(self.results_screen, "results")
+        self.install_screen(self.menu_screen, self.menu.name)
         self.push_screen(self.menu.name)

@@ -62,6 +62,13 @@ ModalScreen > Vertical {
     height: auto;
 }
 
+ResultScreen RichLog {
+    width: 80vw;
+    height: 80vh;
+    border: $primary wide;
+    padding: 1;
+}
+
 ValueArgumentInputScreen Label.result {
     background: $primary;
     margin-right: 1;
