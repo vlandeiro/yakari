@@ -9,10 +9,21 @@ name = "Branch operations"
 
 [menus.b.arguments]
 "-f" = { flag = "--force" }
+"-t" = { flag = "--track" }
 
 [menus.b.commands.b]
+name = "branch"
+description = "Switch to an existing branch"
+template = ["git", "checkout", { name = "branch name", suggestions = { command = "git for-each-ref --format='%(refname:short)' refs/heads/" } }]
+
+[menus.b.commands.c]
+name = "checkout"
+description = "Create a new branch and switch to it"
+template = ["git", "checkout", { include = "*" }, "-b", { name = "branch name", suggestions = { command = "git for-each-ref --format='%(refname:short)' refs/heads/" } }]
+
+[menus.b.commands.C]
 name = "create"
-description = "Create new branch"
+description = "Create new branch but stay on the current branch"
 template = ["git", "branch", { include = "*" }, { name = "branch_name" }]
 
 [menus.b.commands.d]
@@ -21,7 +32,6 @@ description = "Delete a branch"
 template = [
   "git",
   "branch",
-  { include = "*" },
   "-D",
   { name = "branch_name", multi = true, suggestions = { command = "git for-each-ref --format='%(refname:short)' refs/heads/" } },
 ]
@@ -65,25 +75,6 @@ template = [
   { include = "*" },
   { name = "updated commit message", template = "-m={self.value}" },
 ]
-
-## Checkout
-[menus.C]
-name = "Checkout operations"
-
-[menus.C.arguments]
-"-f" = { flag = "--force" }
-"-b" = { flag = "--branch" }
-"-t" = { flag = "--track" }
-
-[menus.C.commands.c]
-name = "checkout"
-description = "Switch branches or restore files"
-template = ["git", "checkout", { include = "*" }, { name = "branch name" }]
-
-[menus.C.commands.f]
-name = "file"
-description = "Restore file from HEAD"
-template = ["git", "checkout", "--", { name = "filepath" }]
 
 ## Diffs
 [menus.d]
