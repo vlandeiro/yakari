@@ -274,7 +274,6 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
 class ResultScreen(ModalScreen):
     BINDINGS = [
         ("q", "pop_screen", "Quit"),
-        ("ctrl+g", "pop_screen", "Quit"),
         ("slash", "pop_screen", "Quit"),
     ]
 
@@ -297,10 +296,9 @@ class MenuScreen(Screen):
     """
 
     BINDINGS = [
-        ("ctrl+g", "reset_or_pop", "Reset / Back"),
-        ("slash", "show_results", "Show Results"),
-        ("tab", "complete_input", "Complete"),
         ("backspace", "backspace_input", "Erase"),
+        ("tab", "complete_input", "Complete"),
+        ("slash", "show_results", "Show Results"),
         ("ctrl+e", "change_mode", "Toggle mode"),
     ]
 
@@ -327,9 +325,8 @@ class MenuScreen(Screen):
 
         shortcut_description = dict()
         if self.app.inplace:
-            shortcut_description["/"] = "toggle results"
-        shortcut_description["backspace"] = "erase 1"
-        shortcut_description["ctrl+g"] = "reset / go back"
+            shortcut_description["/"] = "results"
+        shortcut_description["backspace"] = "erase / go back"
         shortcut_description["ctrl+e"] = "toggle edit mode"
         shortcut_description["ctrl+c"] = "quit"
 
@@ -341,7 +338,7 @@ class MenuScreen(Screen):
 
         is_edit_mode = "yes" if self.edit_mode else "no"
         mode_display = Horizontal(
-            Label("Edit mode:", classes="title"), Label(is_edit_mode), id="mode"
+            Label("Edit:", classes="title"), Label(is_edit_mode), id="mode"
         )
 
         yield Horizontal(cur_input_display, help_display, mode_display, id="footer")
@@ -350,23 +347,14 @@ class MenuScreen(Screen):
         if self.app.inplace:
             self.app.push_screen("results")
 
-    def action_reset_or_pop(self):
-        """Reset current input or pop screen if no input.
-
-        If there is current input, clear it. Otherwise, exit app if at entrypoint
-        or pop the screen if in a submenu.
-        """
-        if self.cur_input:
-            self.cur_input = ""
-        elif self.is_entrypoint:
-            self.app.exit()
-        else:
-            self.dismiss(None)
-
     def action_backspace_input(self):
         """Remove the last character from current input."""
         if self.cur_input:
             self.cur_input = self.cur_input[:-1]
+        elif self.is_entrypoint:
+            self.app.exit()
+        else:
+            self.dismiss(None)
 
     def action_change_mode(self):
         self.edit_mode = not self.edit_mode
@@ -374,7 +362,7 @@ class MenuScreen(Screen):
     def _get_full_input(self) -> str:
         full_input = self.cur_input
         if self.ancestor_input:
-            full_input = f"{self.ancestor_input} >> {self.cur_input}"
+            full_input = f"{self.ancestor_input} > {self.cur_input}"
         return full_input
 
     @work
@@ -597,7 +585,7 @@ class YakariApp(App):
     CSS_PATH = "app.css"
     COMMAND_PALETTE_BINDING = "question_mark"
     BINDINGS = [
-        ("ctrl+g", "quit", "Exit"),
+        ("ctrl+c", "quit", "Exit"),
     ]
 
     def __init__(

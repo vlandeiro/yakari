@@ -19,11 +19,13 @@ MenuScreen > Label {
 }
 
 MenuScreen #cur-input {
-    width: 40vw;
+    width: 10vw;
+    align: left middle;
 }
 
 MenuScreen #help-section {
-    width: 50vw;
+    width: 80vw;
+    align: center middle;
 }
 
 #help-section Label {
@@ -32,7 +34,7 @@ MenuScreen #help-section {
 
 MenuScreen #mode {
     width: 10vw;
-    text-align: right;
+    align: right middle;
 }
 
 Horizontal .title {
