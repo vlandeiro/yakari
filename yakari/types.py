@@ -164,8 +164,10 @@ class NamedArgument(Argument, ABC):
 
         values = self.get_value_list()
         if self.positional:
-            multi_style = " " if self.multi_style == "repeat" else self.multi_style
-            return multi_style.join(values)
+            if self.multi_style == "repeat":
+                return values
+            else:
+                return self.multi_style.join(values)
 
         if not self.multi:
             value = values[0]
@@ -228,12 +230,12 @@ class SuggestionsList(YakariType):
 
 class SuggestionsCommand(YakariType):
     command: str
-    disable_caching: bool = False
+    cache: bool = False
     _suggestions: List[str] = PrivateAttr(default_factory=list)
 
     @property
     def values(self):
-        if self.disable_caching or not self._suggestions:
+        if not self.cache or not self._suggestions:
             result = subprocess.run(self.command, capture_output=True, shell=True)
             if result.stderr:
                 raise RuntimeError(
