@@ -1,175 +1,208 @@
 name = "git"
 
-## Branch
+[configuration.named_arguments_style]
+separator = "equal"
+multi_style = "repeat"
+
 [menus.b]
 name = "Branch operations"
 
 [menus.b.arguments]
-"-f" = { flag="--force" }
-"-d" = { flag="--delete" }
+"-f" = { flag = "--force" }
 
 [menus.b.commands.b]
 name = "create"
 description = "Create new branch"
-template = ["git", "checkout", "-b", {varname = "optional_arguments"}]
+template = ["git", "branch", { include = "*" }, { name = "branch_name" }]
+
+[menus.b.commands.d]
+name = "delete"
+description = "Delete a branch"
+template = [
+  "git",
+  "branch",
+  { include = "*" },
+  "-d",
+  { name = "branch_name", suggestions = { command = "git for-each-ref --format='%(refname:short)' refs/heads/" } },
+]
 
 [menus.b.commands.l]
 name = "list"
 description = "List branches"
-template = ["git", "branch", "--list", {varname = "optional_arguments"}]
+template = ["git", "branch", "--list"]
 
 [menus.b.commands.m]
 name = "merge"
 description = "Merge branch"
-template = ["git", "merge", {varname = "optional_arguments"}]
+template = ["git", "merge", { include = "*" }, { name = "branch or commit" }]
 
 ## Commit
 [menus.c]
 name = "Commit"
 
 [menus.c.arguments]
-"-R" = { flag="--reset-author" }
-"-a" = { flag="--all" }
-"-n" = { flag="--no-verify" }
-"-e" = { flag="--edit" }
+"-R" = { flag = "--reset-author" }
+"-a" = { flag = "--all" }
+"-n" = { flag = "--no-verify" }
+"-e" = { flag = "--edit" }
 
 [menus.c.commands.c]
 name = "commit"
 template = [
-    "git",
-    "commit",
-    { name="commit message", template='-m "{self.value}"' },
+  "git",
+  "commit",
+  { name = "commit message", template = "-m={self.value}" },
 ]
 
 [menus.c.commands.w]
 name = "reword"
-template = [ "git", "commit", "--amend", "--only", "--allow-empty", {varname = "optional_arguments"} ]
-
-[menus.c.commands.a]
-name = "amend"
-template = [ "git", "commit", "--amend", {varname = "optional_arguments"} ]
+template = [
+  "git",
+  "commit",
+  "--amend",
+  "--only",
+  "--allow-empty",
+  { include = "*" },
+  { name = "updated commit message", template = "-m={self.value}" },
+]
 
 ## Checkout
 [menus.C]
 name = "Checkout operations"
 
 [menus.C.arguments]
-"-f" = { flag="--force" }
-"-b" = { flag="--branch" }
-"-t" = { flag="--track" }
+"-f" = { flag = "--force" }
+"-b" = { flag = "--branch" }
+"-t" = { flag = "--track" }
 
 [menus.C.commands.c]
 name = "checkout"
 description = "Switch branches or restore files"
-template = ["git", "checkout", {varname = "optional_arguments"}]
+template = ["git", "checkout", { include = "*" }, { name = "branch name" }]
 
 [menus.C.commands.f]
 name = "file"
 description = "Restore file from HEAD"
-template = ["git", "checkout", "--", {name = "filepath", template="{self.value}"}]
+template = [
+  "git",
+  "checkout",
+  "--",
+  { name = "filepath" },
+]
 
 ## Diffs
 [menus.d]
 name = "Diff operations"
 
 [menus.d.arguments]
-"-c" = { flag="--cached" }
-"-w" = { flag="--ignore-all-space" }
-"-b" = { flag="--ignore-space-change" }
-"-s" = { flag="--stat" }
-"-n" = { flag="--name-only" }
+"--color" = { name = "--color", selected = "always", choices = [
+  "always",
+  "never",
+  "auto",
+] }
+"--stat" = { flag = "--stat", on = true, description = "Show diffstat" }
+"-b" = { flag = "--ignore-space-change" }
+"-c" = { flag = "--cached" }
+"-n" = { flag = "--name-only" }
+"-w" = { flag = "--ignore-all-space", on = true, description = "Ignore whitespace changes" }
 
 [menus.d.commands.d]
 name = "diff"
 description = "Show changes between commits, commit and working tree, etc"
-template = ["git", "diff", {varname = "optional_arguments"}]
+template = ["git", "diff", { include = "*" }]
+lexer = "diff"
 
 [menus.d.commands.s]
 name = "staged"
 description = "Show staged changes"
-template = ["git", "diff", "--staged", {varname = "optional_arguments"}]
+template = ["git", "diff", "--staged", { include = "*" }]
+lexer = "diff"
 
 ## Clean
 [menus.k]
 name = "Clean operations"
 
 [menus.k.arguments]
-"-f" = { flag="--force" }
-"-d" = { flag="--directory" }
-"-x" = { flag="--exclude" }
-"--dry-run" = { flag="--dry-run" }
+"-f" = { flag = "--force" }
+"-d" = { flag = "--directory" }
+"-x" = { flag = "--exclude" }
+"--dry-run" = { flag = "--dry-run", on = true }
+"-i" = { flag = "--interactive", on = true }
 
 [menus.k.commands.c]
 name = "clean"
 description = "Remove untracked files from working tree"
-template = ["git", "clean", {varname = "optional_arguments"}]
+template = ["git", "clean", { include = "*" }]
+inplace = false
 
 ## Logs
 [menus.l]
 name = "Show commit logs"
 
 [menus.l.arguments]
-"-d" = { flag="--decorate" }
-"-g" = { flag="--graph", on=true }
-"-o" = { flag="--oneline", on=true }
-"-n" = { name="--max-count", template="{self.name}={self.value}" }
-"-p" = { flag="--patch" }
-"-s" = { flag="--stat" }
-"-S" = { name="--since", template="--since={self.value}" }
-"-a" = { name="--author", template="--author={self.value}" }
+"-d" = { flag = "--decorate", on = true }
+"-g" = { flag = "--graph", on = true }
+"-o" = { flag = "--oneline", on = true }
+"-n" = { name = "--max-count", value = "10" }
+"-s" = { flag = "--stat", description = "Show +/- statistics" }
+"-S" = { name = "--since" }
+"-a" = { name = "--author", description = "Filter to authors matching this pattern", suggestions = { command = 'git log --pretty="%an" | sort -u' }, multi = true }
 
 [menus.l.commands.a]
 name = "all"
 description = "Show commit logs for all branches"
-template=[ "git", "log", "--branches=*", { varname="optional_arguments" } ]
+template = ["git", "log", "--branches=*", { include = "*" }]
+lexer = "diff"
 
 [menus.l.commands.l]
 name = "current"
 description = "Show commit logs for the current branch"
-template=["git", "log", { varname="optional_arguments" }]
+template = ["git", "log", { include = "*" }]
+lexer = "diff"
 
 ## Merge
 [menus.m]
 name = "Merge operations"
 
 [menus.m.arguments]
-"--no-ff" = { flag="--no-ff" }
-"-s" = { flag="--squash" }
-"-c" = { flag="--continue" }
-"-a" = { flag="--abort" }
+"--no-ff" = { flag = "--no-ff" }
+"-s" = { flag = "--squash" }
+"-c" = { flag = "--continue" }
+"-a" = { flag = "--abort" }
+"-i" = { flag = "--interactive", on = true }
 
 [menus.m.commands.m]
 name = "merge"
 description = "Join two or more development histories together"
-template = ["git", "merge", {varname = "optional_arguments"}]
+template = ["git", "merge", { include = "*" }]
 
 [menus.m.commands.r]
 name = "rebase"
 description = "Reapply commits on top of another base tip"
-template = ["git", "rebase", {varname = "optional_arguments"}]
+template = ["git", "rebase", { include = "*" }, { name = "branch or commit" }]
 
 ## Remote operations
 [menus.p]
 name = "Remote operations"
 
 [menus.p.arguments]
-"-f" = { flag="--force" }
-"-u" = { flag="--set-upstream" }
+"-f" = { flag = "--force" }
+"-u" = { flag = "--set-upstream" }
 
 [menus.p.commands.p]
 name = "push"
 description = "Push to remote"
-template = ["git", "push", {varname = "optional_arguments"}]
+template = ["git", "push", { include = "*" }]
 
 [menus.p.commands.l]
 name = "pull"
 description = "Pull from remote"
-template = ["git", "pull", {varname = "optional_arguments"}]
+template = ["git", "pull", { include = "*" }]
 
 [menus.p.commands.f]
 name = "fetch"
 description = "Download objects and refs"
-template = ["git", "fetch", {varname = "optional_arguments"}]
+template = ["git", "fetch", { include = "*" }]
 
 ## Remote repository
 [menus.r]
@@ -178,12 +211,19 @@ name = "Remote repository"
 [menus.r.commands.a]
 name = "add"
 description = "Add remote repository"
-template = ["git", "remote", "add", {varname = "optional_arguments"}]
+template = [
+  "git",
+  "remote",
+  "add",
+  { include = "*" },
+  { name = "repository name" },
+  { name = "repository URL" },
+]
 
 [menus.r.commands.r]
 name = "remove"
 description = "Remove remote repository"
-template = ["git", "remote", "remove", {varname = "optional_arguments"}]
+template = ["git", "remote", "remove", { include = "*" }]
 
 [menus.r.commands.l]
 name = "list"
@@ -197,77 +237,82 @@ name = "Status and staging"
 [menus.s.commands.s]
 name = "status"
 description = "Show working tree status"
-template = ["git", "status", {varname = "optional_arguments"}]
+template = ["git", "status", { include = "*" }]
 
 [menus.s.commands.a]
 name = "add"
 description = "Add file contents to index"
-template = ["git", "add", {varname = "optional_arguments"}, {name = "path", template="{self.value}"}]
+template = [
+  "git",
+  "add",
+  { include = "*" },
+  { name = "path", multi = true, suggestions = { command = "git ls-files -m -o --exclude-standard" } },
+]
 
 [menus.s.commands.r]
 name = "reset"
 description = "Reset current HEAD"
-template = ["git", "reset", {varname = "optional_arguments"}]
+template = ["git", "reset", { include = "*" }]
 
 ## Stash
 [menus.S]
 name = "Stash operations"
 
 [menus.S.arguments]
-"-a" = { flag="--all" }
-"-k" = { flag="--keep-index" }
-"-u" = { flag="--include-untracked" }
+"-a" = { flag = "--all" }
+"-k" = { flag = "--keep-index", on = true }
+"-u" = { flag = "--include-untracked", on = true }
 
 [menus.S.commands.s]
 name = "save"
 description = "Stash current changes"
-template = ["git", "stash", "push", {varname = "optional_arguments"}]
+template = ["git", "stash", "push", { include = "*" }]
 
 [menus.S.commands.p]
 name = "pop"
 description = "Apply and remove stash"
-template = ["git", "stash", "pop", {varname = "optional_arguments"}]
+template = ["git", "stash", "pop", { include = "*" }]
 
 [menus.S.commands.a]
 name = "apply"
 description = "Apply stash without removing"
-template = ["git", "stash", "apply", {varname = "optional_arguments"}]
+template = ["git", "stash", "apply", { include = "*" }]
 
 [menus.S.commands.l]
 name = "list"
 description = "List stashes"
-template = ["git", "stash", "list", {varname = "optional_arguments"}]
+template = ["git", "stash", "list"]
 
 [menus.S.commands.d]
 name = "drop"
 description = "Remove a stash"
-template = ["git", "stash", "drop", {varname = "optional_arguments"}]
+template = ["git", "stash", "drop", { include = "*" }]
 
 [menus.S.commands.c]
 name = "clear"
 description = "Remove all stashes"
-template = ["git", "stash", "clear", {varname = "optional_arguments"}]
+template = ["git", "stash", "clear"]
 
 ## Tags
 [menus.t]
 name = "Tag operations"
 
 [menus.t.arguments]
-"-f" = { flag="--force" }
-"-d" = { flag="--delete" }
-"-l" = { flag="--list" }
+"-f" = { flag = "--force" }
+"-d" = { flag = "--delete" }
+"-l" = { flag = "--list" }
 
 [menus.t.commands.t]
 name = "tag"
 description = "Create tag"
-template = ["git", "tag", {varname = "optional_arguments"}]
+template = ["git", "tag", { include = "*" }]
 
 [menus.t.commands.a]
 name = "annotated"
 description = "Create annotated tag"
-template = ["git", "tag", "-a", {varname = "optional_arguments"}]
+template = ["git", "tag", "-a", { include = "*" }, { name = "tag name" }]
 
 [menus.t.commands.l]
 name = "list"
 description = "List tags"
-template = ["git", "tag", "--list", {varname = "optional_arguments"}]
+template = ["git", "tag", "--list", { include = "*" }]
