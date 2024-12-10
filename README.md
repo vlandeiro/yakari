@@ -1,27 +1,13 @@
 # Yakari
 
-<img src="./static/yakari.png" width="220" align="right" />
-
 Transform complex command-line interfaces into guided, interactive experiences. Yakari
 helps users build commands step by step, making CLI tools more accessible and
 user-friendly.
 
-**Features**: 
-
-- Interactive command building
-- Contextual help and descriptions
-- Works alongside existing CLI tools
-- Command history across executions
-- Static and dynamic suggestions
-- In-place command execution
-- Supported argument types:
-  - Flag argument
-  - Single-value argument
-  - Multi-choice argument 
-  - Password argument
-  - Multi-value argument
 
 ## Getting started
+
+<img src="./static/yakari.png" width="220" align="right" />
 
 ### Basic Navigation
 
@@ -98,8 +84,22 @@ uv add git+https://github.com/vlandeiro/yakari.git
 > Yakari comes with a set of [pre-defined menus](https://github.com/vlandeiro/yakari/tree/main/menus/tree/main/menus).
 > Copy the menus you want to use into `~/.config/yakari/menus` (e.g. `git.toml`) so you can run `yakari git` instead of `yakari https://raw.githubusercontent.com/vlandeiro/yakari/refs/heads/main/menus/git.toml`
 
-## Roadmap
+## Features
 
+- Interactive command building
+- Contextual help and descriptions
+- Works alongside existing CLI tools
+- Command history across executions
+- Static and dynamic suggestions
+- In-place command execution
+- Supported argument types:
+  - Flag argument
+  - Single-value argument
+  - Multi-choice argument 
+  - Password argument
+  - Multi-value argument
+
+### Roadmap
 - Add documentation on creating custom menus
 - Add unit tests everywhere
 - Publish to PyPi
