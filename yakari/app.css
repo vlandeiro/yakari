@@ -95,6 +95,7 @@ SuggestionsList {
 SuggestionsList > OptionList {
     border: $primary wide;
     width: auto;
+    min-width: 30;
     max-width: 100%;
     max-height: 80vh;
 }
