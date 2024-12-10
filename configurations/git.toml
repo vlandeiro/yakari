@@ -61,7 +61,7 @@ name = "commit"
 template = [
   "git",
   "commit",
-  { name = "commit message", template = "-m={self.value}" },
+  { name = "commit message", template = ["-m", "{self.value}"] },
 ]
 
 [menus.c.commands.w]
@@ -73,7 +73,7 @@ template = [
   "--only",
   "--allow-empty",
   { include = "*" },
-  { name = "updated commit message", template = "-m={self.value}" },
+  { name = "updated commit message", template = ["-m", "{self.value}"] },
 ]
 
 ## Diffs
