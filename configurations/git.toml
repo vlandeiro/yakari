@@ -257,12 +257,12 @@ template = ["git", "stash", "push", { include = "*" }]
 [menus.S.commands.p]
 name = "pop"
 description = "Apply and remove stash"
-template = ["git", "stash", "pop", { include = "*" }]
+template = ["git", "stash", "pop", { name = "stash", suggestions = { command = 'git stash list --pretty="%gd"' } }]
 
 [menus.S.commands.a]
 name = "apply"
 description = "Apply stash without removing"
-template = ["git", "stash", "apply", { include = "*" }]
+template = ["git", "stash", "apply", { name = "stash", suggestions = { command = 'git stash list --pretty="%gd"' } }]
 
 [menus.S.commands.l]
 name = "list"
@@ -272,7 +272,7 @@ template = ["git", "stash", "list"]
 [menus.S.commands.d]
 name = "drop"
 description = "Remove a stash"
-template = ["git", "stash", "drop", { include = "*" }]
+template = ["git", "stash", "drop", { name = "stash", suggestions = { command = 'git stash list --pretty="%gd"' } }]
 
 [menus.S.commands.c]
 name = "clear"
@@ -284,19 +284,22 @@ template = ["git", "stash", "clear"]
 name = "Tag operations"
 
 [menus.t.arguments]
-"-f" = { flag = "--force" }
-"-d" = { flag = "--delete" }
-"-l" = { flag = "--list" }
+"-f" = { flag = "--force", description = "Replace the tags if it already exists" }
 
-[menus.t.commands.t]
-name = "tag"
-description = "Create tag"
-template = ["git", "tag", { include = "*" }]
+[menus.t.commands.c]
+name = "create"
+description = "Create a simple tag"
+template = ["git", "tag", { include = "*" }, { name = "tag name" }]
 
-[menus.t.commands.a]
-name = "annotated"
-description = "Create annotated tag"
-template = ["git", "tag", "-a", { include = "*" }, { name = "tag name" }]
+[menus.t.commands.C]
+name = "create annotated"
+description = "Create an annotated tag"
+template = ["git", "tag", { include = "*" }, "-a", { name = "tag name" }, "-m", { name = "tag message" } ]
+
+[menus.t.commands.d]
+name = "delete"
+description = "Delete a tag"
+template = [ "git", "tag", "-d", { name = "tag name", multi = true, suggestions = { command = "git tag --list" } }]
 
 [menus.t.commands.l]
 name = "list"
