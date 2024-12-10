@@ -25,12 +25,7 @@ name = "Dependency management"
 [menus.d.commands.a]
 name = "add"
 description = "Install packages"
-template = [
-  "uv",
-  "add",
-  { include = "*" },
-  { name = "target", multi = true },
-]
+template = ["uv", "add", { include = "*" }, { name = "target", multi = true }]
 
 [menus.d.commands.r]
 name = "remove"
@@ -52,12 +47,7 @@ name = "Virtual environment"
 [menus.v.commands.c]
 name = "create"
 description = "Create a new virtual environment"
-template = [
-  "uv",
-  "venv",
-  { include = "*" },
-  { name = "path", value = ".venv" },
-]
+template = ["uv", "venv", { include = "*" }, { name = "path", value = ".venv" }]
 
 [menus.s]
 name = "Sync dependencies"

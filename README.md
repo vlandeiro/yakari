@@ -21,21 +21,13 @@ user-friendly.
   - Password argument
   - Multi-value argument
 
-**Roadmap**:
-- Publish to pip.
-- Add argument types:
-  - File argument
-- Support environment variables.
-- Stream command outputs instead of waiting.
-- Support interactive commands when running in place.
-
 ## Run the demo
 
 If you already have [uv](https://github.com/astral-sh/uv) installed, you can run the demo with:
 
 ```sh
 uvx \
-    --from git+ssh://git@github.com/vlandeiro/yakari \
+    --from git+https://github.com/vlandeiro/yakari \
     yakari https://raw.githubusercontent.com/vlandeiro/yakari/refs/heads/master/configurations/demo.toml
 ```
 
@@ -88,7 +80,7 @@ description = "List branches"
 template = ["git", "branch", "--list"]
 ```
 
-## Use existing configurations
+## Use existing menus
 
 Yakari comes with a set of ready-to-use configurations. To get started:
 
@@ -101,9 +93,9 @@ ln -s /path/to/yakari/configurations ~/.config/yakari
    - Instead of `yakari ~/.config/yakari/configurations/git.toml`
    - Simply use `yakari git`
 
-Yakari automatically searches for matching TOML configurations in `~/.config/yakari`.
+Yakari automatically searches for matching TOML configurations in `~/.config/yakari/configurations`.
 
-## Create new configurations
+## Create a new menu
 
 If a CLI you use is not yet supported or you want to build your own collection
 of commands, create a new TOML file with the following template:
@@ -127,6 +119,17 @@ name = "My Yakari Menu"
 separator = "equal"    # MUST be one of "equal" or "space"
 multi_style = "repeat" # MUST be "repeat" or a single character like " " or ","
 ```
+
+
+## Roadmap
+
+- Publish to pip
+- Add argument types:
+  - File argument
+- Support environment variables
+- Stream command outputs instead of waiting
+- Support interactive commands when running in place
+
 
 ## References
 

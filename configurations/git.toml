@@ -83,12 +83,7 @@ template = ["git", "checkout", { include = "*" }, { name = "branch name" }]
 [menus.C.commands.f]
 name = "file"
 description = "Restore file from HEAD"
-template = [
-  "git",
-  "checkout",
-  "--",
-  { name = "filepath" },
-]
+template = ["git", "checkout", "--", { name = "filepath" }]
 
 ## Diffs
 [menus.d]
