@@ -71,7 +71,7 @@ class ChoiceArgumentInputScreen(ModalScreen[int | List[str] | None]):
         match event.key:
             case "enter":
                 self.dismiss(result)
-            case "ctrl+g":
+            case "ctrl+c":
                 self.dismiss(None)
                 event.stop()
 
@@ -152,7 +152,7 @@ class ArgumentInput(Widget):
                     self.post_message(self.Submitted(self.input_widget.value))
                 event.stop()
 
-            case "ctrl+g":
+            case "ctrl+c":
                 if self.input_widget.value:
                     self.input_widget.value = ""
                     if self.with_history:
@@ -256,7 +256,7 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
 
     def on_key(self, event: events.Key):
         match event.key:
-            case "ctrl+g":
+            case "ctrl+c":
                 self.dismiss(None)
                 event.stop()
 
@@ -351,9 +351,7 @@ class MenuScreen(Screen):
         """Remove the last character from current input."""
         if self.cur_input:
             self.cur_input = self.cur_input[:-1]
-        elif self.is_entrypoint:
-            self.app.exit()
-        else:
+        elif not self.is_entrypoint:
             self.dismiss(None)
 
     def action_change_mode(self):
