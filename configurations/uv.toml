@@ -1,23 +1,114 @@
 name = "uv"
 
+[arguments.--color]
+name = "--color"
+choices = ["auto", "always", "never"]
+selected = "always"
+
 [commands]
-u = { name="update", template=["uv", "self", "update"] }
+u = { name = "update", template = ["uv", "self", "update"] }
+V = { name = "version", template = ["uv", "--version"] }
 
 [menus.d]
 name = "Dependency management"
 
 [menus.d.arguments]
-"-d" = { flag="--dev", description="Add/remove the requirements to the development dependency group." }
-"-o" = { name="--optional", description="Add/remove the requirements to the package's optional dependencies for the specified extra." }
-"-e" = { flag="--editable", description="Add the requirements as editable." }
-"-E" = { name="--extra", description="Extras to enable for the dependency." }
-"-U" = { flag="--upgrade", description="Allow package upgrades."}
+"-d" = { flag = "--dev", description = "Add/remove the requirements to the development dependency group." }
+"-o" = { name = "--optional", description = "Add/remove the requirements to the package's optional dependencies for the specified extra." }
+"-e" = { flag = "--editable", description = "Add the requirements as editable." }
+"-E" = { name = "--extra", description = "Extras to enable for the dependency." }
+"-U" = { flag = "--upgrade", description = "Allow package upgrades." }
+"-p" = { flag = "--prerelease", description = "Allow prerelease versions." }
+"-i" = { flag = "--index-url", description = "Base URL of the Python Package Index." }
+"--no-deps" = { flag = "--no-deps", description = "Don't install package dependencies." }
 
 [menus.d.commands.a]
 name = "add"
+description = "Install packages"
 template = [
-         "uv",
-         "add",
-         { varname = "optional_arguments" },
-         { name="target" }
+  "uv",
+  "add",
+  { include = "*" },
+  { name = "target", multi = true },
 ]
+
+[menus.d.commands.r]
+name = "remove"
+description = "Remove packages"
+template = [
+  "uv",
+  "remove",
+  { include = "*" },
+  { name = "target", multi = true },
+]
+
+[menus.v]
+name = "Virtual environment"
+
+[menus.v.arguments]
+"-p" = { name = "--python", description = "The Python executable to use." }
+"--system-site-packages" = { flag = "--system-site-packages", description = "Give the virtual environment access to the system site-packages dir." }
+
+[menus.v.commands.c]
+name = "create"
+description = "Create a new virtual environment"
+template = [
+  "uv",
+  "venv",
+  { include = "*" },
+  { name = "path", value = ".venv" },
+]
+
+[menus.s]
+name = "Sync dependencies"
+
+[menus.s.arguments]
+"--no-deps" = { flag = "--no-deps", description = "Don't install package dependencies." }
+"-U" = { flag = "--upgrade", description = "Upgrade all specified packages to the newest available version." }
+"--prerelease" = { flag = "--prerelease", description = "Include pre-release and development versions." }
+
+[menus.s.commands.s]
+name = "sync"
+description = "Synchronize project dependencies with the lock file"
+template = ["uv", "sync", { include = "*" }]
+
+[menus.c]
+name = "Cache operations"
+
+[menus.c.commands.c]
+name = "clean"
+description = "Clean the uv cache"
+template = ["uv", "cache", "clean"]
+
+[menus.c.commands.d]
+name = "dir"
+description = "Show cache directory location"
+template = ["uv", "cache", "dir"]
+
+[menus.c.commands.l]
+name = "list"
+description = "List cached packages"
+template = ["uv", "cache", "list", { include = "*" }]
+
+[menus.c.commands.r]
+name = "remove"
+description = "Remove specific packages from cache"
+template = ["uv", "cache", "remove"]
+
+[menus.i]
+name = "Info commands"
+
+[menus.i.commands.l]
+name = "list"
+description = "List installed packages"
+template = ["uv", "pip", "list", { include = "*" }]
+
+[menus.i.commands.f]
+name = "freeze"
+description = "Output installed packages in requirements format"
+template = ["uv", "pip", "freeze", { include = "*" }]
+
+[menus.i.commands.s]
+name = "show"
+description = "Show information about installed packages"
+template = ["uv", "pip", "show", { include = "*" }, { name = "package" }]
