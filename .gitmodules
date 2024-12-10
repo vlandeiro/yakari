@@ -1,0 +1,3 @@
+[submodule "menus"]
+	path = menus
+	url = git@github.com:vlandeiro/yakari-menus.git
