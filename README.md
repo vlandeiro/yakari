@@ -23,22 +23,6 @@ user-friendly.
 
 ## Getting started
 
-### (Optional) Installation
-
-Yakari is not yet published to PyPI - install directly from GitHub:
-
-```bash
-# Using pip
-pip install git+https://github.com/vlandeiro/yakari.git
-
-# Using uv
-uv add git+https://github.com/vlandeiro/yakari.git
-```
-
-> [!TIP]
-> Yakari comes with a set of [pre-defined menus](https://github.com/vlandeiro/yakari/tree/master/configurations/tree/master/configurations).
-> Copy the menus you want to use into `~/.config/yakari/configurations` (e.g. `git.toml`) so you can run `yakari git` instead of `yakari https://raw.githubusercontent.com/vlandeiro/yakari/refs/heads/master/configurations/git.toml`
-
 ### Basic Navigation
 
 Yakari is an interactive command menu that makes it easy to run complex commands. 
@@ -46,38 +30,23 @@ Think of it as a smart command launcher where you type shortcuts instead of reme
 
 #### Start Typing
 
-When you launch Yakari, you'll see a menu of available options. Just start typing - Yakari instantly shows what matches your input!
-
-<figure>
-  <img src="https://github.com/user-attachments/assets/95489bcd-832a-488b-b4eb-e75b5bcb30ec" alt="screenshot illustrating how yakari highlights compatible commands based on user's input" />
-  <figcaption>In the git branch menu, typing `-` highlights the `-f` and `-t` arguments, and dims other entries.</figcaption>
-</figure>
-
-Every menu item has a shortcut (shown on the left). Type the shortcut to select it:
+When you launch Yakari, you'll see a menu of available options. Every menu item has a shortcut (shown on the left). Type the shortcut to select it:
 - Commands (things you can run)
 - Arguments (options you can set)
 - Subcommands (more options inside)
 
-Example:
-```
-b    branch       Switch to an existing branch
-c    checkout     Create a new branch and switch to it
-C    create       Create a new branch but stay on the current branch
-```
+Other important keyboard shortcuts let you interact with the TUI:
 
-#### Key Controls
+| Key         | Action                   |
+|-------------|--------------------------|
+| ctrl+c      | Cancel/Exit              |
+| backspace   | Erase/Go back            |
+| tab         | Auto-complete            |
+| slash       | Toggle results           |
+| ctrl+e      | Toggle edit mode         |
 
-The most important keys to know:
-
-`backspace`
-- Erases the last character you typed
-- Goes back to the previous menu when there are no more character to erase
-
-`tab`
-- Auto-completes when there's only one matching option
-
-`slash`
-- Toggles the results window
+> ![screenshot illustrating how yakari highlights compatible commands based on user's input](https://github.com/user-attachments/assets/95489bcd-832a-488b-b4eb-e75b5bcb30ec)
+> **Example**: In the git branch menu, typing `-` highlights the `-f` and `-t` arguments, and dims other entries.
 
 #### Working with Arguments
 
@@ -113,57 +82,26 @@ https://github.com/user-attachments/assets/4202d30c-180a-4740-9e69-2b123f2e6dd4
 
 Play around with this in a git repo!
 
-### Create your own menus [WIP]
+### (Optional) Installation
 
-Yakari is built around three core concepts:
+Yakari is not yet published to PyPI - install directly from GitHub:
 
-- An `Argument` represents an interactive variable (flag, named argument, or
-  positional argument) that users can modify
-- A `Command` represents the final executable instruction
-- A `Menu` is a collection of arguments, commands, and sub-menus.
+```bash
+# Using pip
+pip install git+https://github.com/vlandeiro/yakari.git
 
-Yakari uses TOML configuration files to define menus. Here's an example that creates
-a menu to list/create/delete git branches:
-
-```toml
-[menus.b]
-name = "Branch operations"
-
-[menus.b.arguments]
-"-f" = { flag = "--force" }
-
-[menus.b.commands.b]
-name = "create"
-description = "Create new branch"
-template = [
-  "git",
-  "branch",
-  { include = "*" },
-  { name = "branch_name" },
-]
-
-[menus.b.commands.d]
-name = "delete"
-description = "Delete a branch"
-template = [
-  "git",
-  "branch",
-  { include = "*" },
-  "-d",
-  {
-    name = "branch_name",
-    suggestions = { command = "git for-each-ref --format='%(refname:short)' refs/heads/" }
-  }
-]
-
-[menus.b.commands.l]
-name = "list"
-description = "List branches"
-template = ["git", "branch", "--list"]
+# Using uv
+uv add git+https://github.com/vlandeiro/yakari.git
 ```
+
+> [!TIP]
+> Yakari comes with a set of [pre-defined menus](https://github.com/vlandeiro/yakari/tree/master/configurations/tree/master/configurations).
+> Copy the menus you want to use into `~/.config/yakari/configurations` (e.g. `git.toml`) so you can run `yakari git` instead of `yakari https://raw.githubusercontent.com/vlandeiro/yakari/refs/heads/master/configurations/git.toml`
 
 ## Roadmap
 
+- Add documentation on creating custom menus
+- Add unit tests everywhere
 - Publish to PyPi
 - Add argument types:
   - File argument
