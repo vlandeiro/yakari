@@ -325,6 +325,7 @@ class Command(YakariType):
     description: str = ""
     template: List[str | MenuArguments | ArgumentImpl]
     lexer: str | None = None
+    inplace: bool | None = None
 
 
 class NamedArgumentsStyle(YakariType):
@@ -375,7 +376,6 @@ class Menu(YakariType):
 
     @classmethod
     def from_toml(cls, command_name: str | Path) -> Self:
-        print(command_name)
         if isinstance(command_name, Path):  # local path
             config_path = command_name
 

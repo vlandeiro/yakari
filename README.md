@@ -27,7 +27,7 @@ user-friendly.
   - File argument
 - Support environment variables.
 - Stream command outputs instead of waiting.
-
+- Support interactive commands when running in place.
 
 ## Run the demo
 

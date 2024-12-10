@@ -528,20 +528,21 @@ class MenuScreen(Screen):
                                     resolved_command.extend(rendered_argument)
 
         self.app.command = resolved_command
+        inplace = command.inplace if command.inplace is not None else self.app.inplace
         self.cur_input = ""
 
         logw: RichLog = self.app.results_screen.log_widget
         command_str = " ".join(resolved_command)
         logw.write(Text(f"$> {command_str}"))
 
-        if self.app.inplace:
+        if inplace:
             self.app.push_screen("results")
 
         if self.app.dry_run:
-            if not self.app.inplace:
+            if not inplace:
                 self.app.exit()
         else:
-            if self.app.inplace:
+            if inplace:
                 result = subprocess.run(resolved_command, capture_output=True)
                 if result.stderr:
                     logw.write(Text(result.stderr.decode(), style=ERROR_STYLE))
@@ -622,3 +623,6 @@ class YakariApp(App):
         self.install_screen(self.results_screen, "results")
         self.install_screen(self.menu_screen, self.menu.name)
         self.push_screen(self.menu.name)
+
+
+# app = YakariApp("demo", dry_run=False, inplace=True)
