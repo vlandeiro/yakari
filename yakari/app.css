@@ -64,7 +64,7 @@ ModalScreen > Vertical {
 
 ResultScreen RichLog {
     width: 100%;
-    height: 50%;
+    height: 80%;
     border-top: $primary wide;
     padding: 1;
     margin: 0;
