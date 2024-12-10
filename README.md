@@ -64,12 +64,12 @@ Edit Mode (press `ctrl+e` to switch):
 
 #### Arguments and commands showcase
 
-With [uv](https://github.com/astral-sh/uv) installed, run `uvx --from git+https://github.com/vlandeiro/yakari yakari https://raw.githubusercontent.com/vlandeiro/yakari/refs/heads/master/configurations/demo.toml`
+With [uv](https://github.com/astral-sh/uv) installed, run `uvx --from git+https://github.com/vlandeiro/yakari yakari https://raw.githubusercontent.com/vlandeiro/yakari/refs/heads/master/menus/demo.toml`
 to start a demo that showcases the different types or arguments and commands. This demo doesn't run any actual command other than `echo` so it's safe to use anywhere.
 
 #### Git example
 
-Running `uvx --from git+https://github.com/vlandeiro/yakari yakari https://raw.githubusercontent.com/vlandeiro/yakari/refs/heads/master/configurations/git.toml`
+Running `uvx --from git+https://github.com/vlandeiro/yakari yakari https://raw.githubusercontent.com/vlandeiro/yakari/refs/heads/master/menus/git.toml`
 will start a TUI with basic `git` features. The video below shows how to use this TUI to:
 
 - list branches
@@ -95,8 +95,8 @@ uv add git+https://github.com/vlandeiro/yakari.git
 ```
 
 > [!TIP]
-> Yakari comes with a set of [pre-defined menus](https://github.com/vlandeiro/yakari/tree/master/configurations/tree/master/configurations).
-> Copy the menus you want to use into `~/.config/yakari/configurations` (e.g. `git.toml`) so you can run `yakari git` instead of `yakari https://raw.githubusercontent.com/vlandeiro/yakari/refs/heads/master/configurations/git.toml`
+> Yakari comes with a set of [pre-defined menus](https://github.com/vlandeiro/yakari/tree/master/menus/tree/master/menus).
+> Copy the menus you want to use into `~/.config/yakari/menus` (e.g. `git.toml`) so you can run `yakari git` instead of `yakari https://raw.githubusercontent.com/vlandeiro/yakari/refs/heads/master/menus/git.toml`
 
 ## Roadmap
 

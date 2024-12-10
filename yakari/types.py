@@ -385,12 +385,12 @@ class Menu(YakariType):
             url = command_name
             parsed_url = urllib.parse.urlparse(url)
             filename = urllib.parse.unquote(Path(parsed_url.path).name)
-            config_path = C.YAKARI_HOME / C.TEMPORARY_CONFIGURATIONS_DIR / filename
+            config_path = C.YAKARI_HOME / C.TEMPORARY_MENUS_DIR / filename
             config_path.parent.mkdir(parents=True, exist_ok=True)
             urllib.request.urlretrieve(url, config_path)
 
         else:  # command name
-            base_path = C.YAKARI_HOME / C.CONFIGURATIONS_DIR
+            base_path = C.YAKARI_HOME / C.MENUS_DIR
             config_path = (base_path / command_name).with_suffix(".toml")
 
         if not (config_path.exists() and config_path.is_file()):

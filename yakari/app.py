@@ -609,6 +609,3 @@ class YakariApp(App):
         self.install_screen(self.results_screen, "results")
         self.install_screen(self.menu_screen, self.menu.name)
         self.push_screen(self.menu.name)
-
-
-# app = YakariApp("demo", dry_run=False, inplace=True)
