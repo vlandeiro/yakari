@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.9.2",
-    "pytest-cov>=6.0.0",
     "rich>=13.9.4",
     "textual>=0.86.1",
     "tomlkit>=0.13.2",
@@ -18,6 +17,7 @@ yakari = "yakari.cli:main"
 [dependency-groups]
 dev = [
     "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
     "pytest>=8.3.3",
     "python-lsp-ruff>=2.2.2",
     "python-lsp-server[all]>=1.12.0",

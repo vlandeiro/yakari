@@ -974,7 +974,6 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
-    { name = "pytest-cov" },
     { name = "rich" },
     { name = "textual" },
     { name = "tomlkit" },
@@ -984,6 +983,7 @@ dependencies = [
 dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
     { name = "python-lsp-ruff" },
     { name = "python-lsp-server", extra = ["all"] },
     { name = "ruff" },
@@ -993,7 +993,6 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "pydantic", specifier = ">=2.9.2" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "rich", specifier = ">=13.9.4" },
     { name = "textual", specifier = ">=0.86.1" },
     { name = "tomlkit", specifier = ">=0.13.2" },
@@ -1003,6 +1002,7 @@ requires-dist = [
 dev = [
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-asyncio", specifier = ">=0.24.0" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
     { name = "python-lsp-ruff", specifier = ">=2.2.2" },
     { name = "python-lsp-server", extras = ["all"], specifier = ">=1.12.0" },
     { name = "ruff", specifier = ">=0.7.4" },
