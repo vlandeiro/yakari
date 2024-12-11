@@ -276,7 +276,7 @@ class CommandResultsWidget(Widget):
         self.log_widget = RichLog(highlight=True, wrap=True)
 
     @work
-    async def execute_command(self, command: List[str], lexer: str):
+    async def execute_command(self, command: List[str]):
         self.write(Text(f"$> {' '.join(command)}"))
 
         # Create the subprocess
@@ -553,9 +553,7 @@ class MenuScreen(Screen):
         else:
             if inplace:
                 self.app.push_screen("results")
-                results_widget.execute_command(
-                    self.app.command, command.lexer or "bash"
-                )
+                results_widget.execute_command(self.app.command)
             else:
                 self.app.exit(
                     result=self.app.command, return_code=0, message=command_str
