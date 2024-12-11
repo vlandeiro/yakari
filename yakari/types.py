@@ -223,6 +223,12 @@ class ChoiceArgument(NamedArgument):
             return [self.selected]
         return self.selected
 
+    @model_validator(mode="after")
+    def sanitize_selected_value(self):
+        if isinstance(self.selected, str):
+            self.selected = [self.selected]
+        return self
+
 
 class SuggestionsList(YakariType):
     values: List[str]
