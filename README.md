@@ -91,7 +91,7 @@ uv add git+https://github.com/vlandeiro/yakari.git
 - Works alongside existing CLI tools
 - Command history across executions
 - Static and dynamic suggestions
-- In-place command execution
+- In-place command execution with streamed output
 - Supported argument types:
   - Flag argument
   - Single-value argument
@@ -106,7 +106,6 @@ uv add git+https://github.com/vlandeiro/yakari.git
 - Add argument types:
   - File argument
 - Support environment variables
-- Stream command outputs instead of blocking until the command finishes
 - Support interactive commands when running in place
 
 ## References

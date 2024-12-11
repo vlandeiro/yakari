@@ -335,7 +335,6 @@ class Command(YakariType):
     name: str
     description: str = ""
     template: CommandTemplate
-    lexer: str | None = None
     inplace: bool | None = None
 
 

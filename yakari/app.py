@@ -1,11 +1,10 @@
+import asyncio
 import shelve
-import subprocess
 from collections import deque
 from pathlib import Path
 from typing import List, Literal
 
 from rich.text import Text
-from rich.syntax import Syntax
 from textual import events, work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical
@@ -24,7 +23,7 @@ from textual.widget import Widget
 from textual.message import Message
 
 from . import constants as C
-from .rich_render import render_menu, ERROR_STYLE
+from .rich_render import render_menu
 from .types import (
     Argument,
     ChoiceArgument,
@@ -271,6 +270,46 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         message.stop()
 
 
+class CommandResultsWidget(Widget):
+    def __init__(self):
+        super().__init__()
+        self.log_widget = RichLog(highlight=True, wrap=True)
+
+    @work
+    async def execute_command(self, command: List[str], lexer: str):
+        self.write(Text(f"$> {' '.join(command)}"))
+
+        # Create the subprocess
+        process = await asyncio.create_subprocess_exec(
+            *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+
+        # Async function to read lines from a stream
+        async def read_stream(stream):
+            while not stream.at_eof():
+                line = await stream.readline()
+                if line:
+                    payload = line.decode().strip()
+                    self.write(Text(payload), scroll_end=True)
+            self.write("")
+
+        # Concurrently read stdout and stderr
+        stdout, stderr = await asyncio.gather(
+            read_stream(process.stdout), read_stream(process.stderr)
+        )
+
+        # Wait for the process to complete and get return code
+        return_code = await process.wait()
+
+        return return_code
+
+    def write(self, *args, **kwargs):
+        self.log_widget.write(*args, **kwargs)
+
+    def compose(self) -> ComposeResult:
+        yield self.log_widget
+
+
 class ResultScreen(ModalScreen):
     BINDINGS = [
         ("q", "pop_screen", "Quit"),
@@ -279,10 +318,10 @@ class ResultScreen(ModalScreen):
 
     def __init__(self):
         super().__init__()
-        self.log_widget = RichLog(highlight=True, wrap=True)
+        self.cmd_results_widget = CommandResultsWidget()
 
     def compose(self) -> ComposeResult:
-        yield self.log_widget
+        yield self.cmd_results_widget
 
     def action_pop_screen(self):
         self.app.pop_screen()
@@ -497,7 +536,9 @@ class MenuScreen(Screen):
         self.app.command = await template_resolver.resolve(self.menu, command.template)
         self.cur_input = ""
 
-        logw: RichLog = self.app.results_screen.log_widget
+        results_widget: CommandResultsWidget = (
+            self.app.results_screen.cmd_results_widget
+        )
         command_str = " ".join(self.app.command)
 
         inplace = command.inplace if command.inplace is not None else self.app.inplace
@@ -505,29 +546,16 @@ class MenuScreen(Screen):
         if self.app.dry_run:
             if inplace:
                 self.app.push_screen("results")
-                logw.write(Text(f"$> {command_str}"))
+                results_widget.write(Text(f"$> {command_str}"))
             if not inplace:
                 self.app.exit(result=None, return_code=0, message=command_str)
 
         else:
             if inplace:
                 self.app.push_screen("results")
-                logw.write(Text(f"$> {command_str}"))
-                result = subprocess.run(self.app.command, capture_output=True)
-
-                if result.stderr:
-                    logw.write(Text(result.stderr.decode(), style=ERROR_STYLE))
-                if result.stdout:
-                    logw.write(
-                        Syntax(
-                            result.stdout.decode(),
-                            command.lexer or "bash",
-                            indent_guides=True,
-                            word_wrap=True,
-                            padding=1,
-                        ),
-                        scroll_end=True,
-                    )
+                results_widget.execute_command(
+                    self.app.command, command.lexer or "bash"
+                )
             else:
                 self.app.exit(
                     result=self.app.command, return_code=0, message=command_str
