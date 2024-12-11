@@ -10,7 +10,7 @@ import urllib.request
 from abc import ABC, abstractmethod
 from collections import deque
 from pathlib import Path
-from typing import Deque, Dict, List, Literal, Self
+from typing import Awaitable, Callable, Deque, Dict, List, Literal, Self
 
 import tomlkit
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
@@ -312,6 +312,9 @@ class MenuArguments(YakariType):
         return arguments
 
 
+CommandTemplate = List[str | MenuArguments | ArgumentImpl]
+
+
 class Command(YakariType):
     """
     Represents a command with configurable arguments and template-based execution.
@@ -325,7 +328,7 @@ class Command(YakariType):
 
     name: str
     description: str = ""
-    template: List[str | MenuArguments | ArgumentImpl]
+    template: CommandTemplate
     lexer: str | None = None
     inplace: bool | None = None
 
@@ -421,3 +424,37 @@ class Menu(YakariType):
             menu.set_default_fields()
 
         return self
+
+
+class CommandTemplateResolver(YakariType):
+    process_argument_fn: Callable[[Argument], Awaitable[None]]
+    resolved_command: List[str] = Field(default_factory=list)
+
+    async def resolve(self, menu: Menu, template: CommandTemplate) -> List[str]:
+        resolved_command = []
+
+        def update_resolved_command(rendered_argument: str | List[str]) -> List[str]:
+            match rendered_argument:
+                case str():
+                    resolved_command.append(rendered_argument)
+                case list():
+                    resolved_command.extend(rendered_argument)
+
+        for part in template:
+            match part:
+                case str():
+                    resolved_command.append(part)
+
+                case Argument():
+                    argument = part
+                    await self.process_argument_fn(argument)
+                    if argument.enabled:
+                        update_resolved_command(argument.render_template())
+
+                case MenuArguments():
+                    arguments = part.resolve_arguments(menu)
+                    for key, argument in arguments.items():
+                        if argument.enabled:
+                            update_resolved_command(argument.render_template())
+
+        return resolved_command

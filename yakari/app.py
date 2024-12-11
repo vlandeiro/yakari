@@ -29,7 +29,7 @@ from .types import (
     Argument,
     ChoiceArgument,
     Command,
-    MenuArguments,
+    CommandTemplateResolver,
     FlagArgument,
     History,
     MatchResult,
@@ -487,49 +487,34 @@ class MenuScreen(Screen):
         Resolves the command template with argument values and exits app
         with the final command.
         """
-        resolved_command = []
-        for part in command.template:
-            match part:
-                case str():
-                    resolved_command.append(part)
-                case Argument():
-                    await self.process_argument(part, action="edit")
-                    if not part.enabled:
-                        return
-                    rendered_argument = part.render_template()
-                    match rendered_argument:
-                        case str():
-                            resolved_command.append(rendered_argument)
-                        case list():
-                            resolved_command.extend(rendered_argument)
-                case MenuArguments():
-                    arguments = part.resolve_arguments(self.menu)
-                    for key, argument in arguments.items():
-                        if argument.enabled:
-                            rendered_argument = argument.render_template()
-                            match rendered_argument:
-                                case str():
-                                    resolved_command.append(rendered_argument)
-                                case list():
-                                    resolved_command.extend(rendered_argument)
 
-        self.app.command = resolved_command
-        inplace = command.inplace if command.inplace is not None else self.app.inplace
+        async def process_argument_fn(argument: Argument):
+            return await self.process_argument(argument, action="edit")
+
+        template_resolver = CommandTemplateResolver(
+            process_argument_fn=process_argument_fn
+        )
+        self.app.command = await template_resolver.resolve(self.menu, command.template)
         self.cur_input = ""
 
         logw: RichLog = self.app.results_screen.log_widget
-        command_str = " ".join(resolved_command)
-        logw.write(Text(f"$> {command_str}"))
+        command_str = " ".join(self.app.command)
 
-        if inplace:
-            self.app.push_screen("results")
+        inplace = command.inplace if command.inplace is not None else self.app.inplace
 
         if self.app.dry_run:
+            if inplace:
+                self.app.push_screen("results")
+                logw.write(Text(f"$> {command_str}"))
             if not inplace:
-                self.app.exit()
+                self.app.exit(result=None, return_code=0, message=command_str)
+
         else:
             if inplace:
-                result = subprocess.run(resolved_command, capture_output=True)
+                self.app.push_screen("results")
+                logw.write(Text(f"$> {command_str}"))
+                result = subprocess.run(self.app.command, capture_output=True)
+
                 if result.stderr:
                     logw.write(Text(result.stderr.decode(), style=ERROR_STYLE))
                 if result.stdout:
@@ -544,7 +529,9 @@ class MenuScreen(Screen):
                         scroll_end=True,
                     )
             else:
-                self.app.exit(resolved_command)
+                self.app.exit(
+                    result=self.app.command, return_code=0, message=command_str
+                )
 
     async def process_menu(self, menu: Menu):
         """Process a submenu by pushing a new menu screen.
