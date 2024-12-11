@@ -435,7 +435,7 @@ class CommandTemplateResolver(YakariType):
     process_argument_fn: Callable[[Argument], Awaitable[None]]
     resolved_command: List[str] = Field(default_factory=list)
 
-    async def resolve(self, menu: Menu, template: CommandTemplate) -> List[str]:
+    async def resolve(self, menu: Menu, template: CommandTemplate) -> List[str] | None:
         resolved_command = []
 
         def update_resolved_command(rendered_argument: str | List[str]) -> List[str]:
@@ -455,7 +455,8 @@ class CommandTemplateResolver(YakariType):
                     await self.process_argument_fn(argument)
                     if argument.enabled:
                         update_resolved_command(argument.render_template())
-
+                    else:
+                        return None
                 case MenuArguments():
                     arguments = part.resolve_arguments(menu)
                     for key, argument in arguments.items():

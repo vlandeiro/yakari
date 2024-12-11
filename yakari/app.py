@@ -536,6 +536,9 @@ class MenuScreen(Screen):
         self.app.command = await template_resolver.resolve(self.menu, command.template)
         self.cur_input = ""
 
+        if self.app.command is None:
+            return
+
         results_widget: CommandResultsWidget = (
             self.app.results_screen.cmd_results_widget
         )
