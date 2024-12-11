@@ -83,7 +83,6 @@ def render_argument(argument: Argument) -> Tuple[str | Text, str | Text]:
         case FlagArgument():
             return (argument.flag, argument.description)
         case ChoiceArgument():
-            argument: ChoiceArgument
             choices_str = " | ".join(argument.choices)
             choices_str = f"[ {choices_str} ]"
             choices_str = Text(choices_str)
@@ -91,9 +90,11 @@ def render_argument(argument: Argument) -> Tuple[str | Text, str | Text]:
                 choices_str.highlight_words(
                     [f" {value} " for value in argument.selected], HIGHLIGHT_STYLE
                 )
-
+            arg_value = argument.selected
+            if not argument.multi and argument.selected:
+                arg_value = argument.selected[0]
             return (
-                Text.assemble(argument.name, "=", render_value(argument.selected)),
+                Text.assemble(argument.name, "=", render_value(arg_value)),
                 Text.assemble(argument.description, " ", choices_str),
             )
         case ValueArgument():
