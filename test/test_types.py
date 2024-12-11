@@ -127,6 +127,7 @@ class TestSuggestionsCommand:
 
     @patch("subprocess.run")
     def test_suggestions_with_caching(self, mock_run, command_instance):
+        command_instance.cache = True
         mock_run.return_value.stdout = b"line1\nline2\n"
         mock_run.return_value.stderr = b""
 
@@ -142,7 +143,7 @@ class TestSuggestionsCommand:
     def test_suggestions_without_caching(self, mock_run, command_instance):
         mock_run.return_value.stdout = b"line1\nline2\n"
         mock_run.return_value.stderr = b""
-        command_instance.disable_caching = True
+        command_instance.cache = False
 
         # Each call should trigger subprocess
         assert command_instance.values == ["line1", "line2"]
