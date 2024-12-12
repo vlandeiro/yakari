@@ -40,7 +40,7 @@ class History(YakariType):
         self.values[value] = 1
 
         if len(self.values) > self.max_size:
-            first_key = self.tolist()[0]
+            first_key = list(self.values.keys())[0]
             del self.values[first_key]
 
 

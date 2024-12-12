@@ -59,9 +59,7 @@ ModalScreen Input {
 }
 
 ModalScreen > Vertical {
-    width: 40vw;
     align: center middle;
-    height: auto;
 }
 
 ResultScreen RichLog {
@@ -77,56 +75,75 @@ ResultScreen Horizontal #help-section {
     width: 100%;
 }
 
-ValueArgumentInputScreen Label.result {
-    background: $primary;
-    border: $primary-lighten-3 wide;
-    margin-right: 1;
-    padding: 0;
-}
-
-ValueArgumentInputScreen Label.highlighted {
-    background: $primary-darken-3;
-    border: $primary wide;
-    margin-right: 1;
-    padding: 0;
-}
-
-SuggestionsWidget {
+ValueArgumentInputScreen {
+    layout: vertical;
     align: center middle;
-    height: auto;
-    max-height: 20;
-    margin: 1;
+    padding: 1;
 }
+
+ValueArgumentInputScreen > Widget {
+    height: auto;
+    max-width: 70w;
+}
+
 
 SuggestionsWidget > OptionList {
     border: $primary wide;
-    width: auto;
-    min-width: 30;
-    max-width: 100%;
-    max-height: 80vh;
+    max-height: 15;
 }
 
 ArgumentInput {
-    height: auto;
+    layout: vertical;
     align: center top;
-    min-height: 20;
+    border: $primary wide;
+    padding: 1;
 }
 
-ArgumentInput > Vertical {
-    align: center top;
-    height: auto;
-}
-
-ArgumentInput #labelled-input {
-    border: $primary tall;
-    margin: 1;
+ArgumentInput Input {
+    border: none;
     padding: 0 1;
-    height: auto;
-    min-height: 3;
 }
 
-ArgumentInput .highlights {
+TagsCollection {
+    layout: vertical;
     height: auto;
-    min-height: 5;
-    align: center top;
+}
+
+TagsCollection > ScrollableContainer {
+    height: auto;
+    max-height: 15;
+    margin-top: 1;
+}
+
+Tag {
+    background: $background-lighten-1;
+    layout: horizontal;
+    height: auto;
+    width: auto;
+    margin-bottom: 1;
+    padding: 0;
+    border: none;
+
+    &:focus {
+        background-tint: $foreground 20%;
+
+        Button {
+            background: $error;
+        }
+    }
+}
+
+Tag > Button {
+    background: $primary;
+    min-width: 3;
+    width: auto;
+    height: auto;
+    margin: 0 0;
+    padding: 0;
+    border: none;
+}
+
+Tag > Label {
+    margin: 0 1;
+    height: auto;
 }

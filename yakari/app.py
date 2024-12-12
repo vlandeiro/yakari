@@ -6,11 +6,12 @@ from typing import List, Literal
 from rich.text import Text
 from textual import events, work
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, Vertical, ScrollableContainer
 from textual.reactive import reactive
 from textual.screen import ModalScreen, Screen
 from textual.suggester import SuggestFromList
 from textual.widgets import (
+    Button,
     Input,
     Label,
     OptionList,
@@ -75,9 +76,83 @@ class ChoiceArgumentInputScreen(ModalScreen[int | List[str] | None]):
                 event.stop()
 
 
+class Tag(Widget):
+    can_focus = True
+    can_focus_children = False
+
+    value: reactive[str] = reactive(str, recompose=True)
+
+    BINDINGS = [
+        ("backspace", "delete_this", "Delete"),
+        ("enter", "delete_this", "Delete"),
+    ]
+
+    class Deleted(Message):
+        def __init__(self, tag):
+            super().__init__()
+            self.tag = tag
+
+    def __init__(self, value: str):
+        super().__init__()
+        self.value = value
+
+    def compose(self) -> ComposeResult:
+        yield Button("X")
+        yield Label(self.value)
+
+    def delete(self):
+        self.post_message(Tag.Deleted(self))
+
+    def on_button_pressed(self, event: Button.Pressed):
+        self.delete()
+
+    def action_delete_this(self):
+        self.delete()
+
+
+class TagsCollection(Widget):
+    can_focus = False
+    can_focus_children = True
+
+    tags: reactive[List[Tag]] = reactive(default=list, recompose=True)
+
+    def _sanitize_tag(self, tag: str | Tag) -> Tag:
+        if isinstance(tag, str):
+            tag = Tag(value=tag)
+        return tag
+
+    def __init__(self, tags: List[str | Tag] | None = None):
+        super().__init__()
+        if self.tags:
+            self.tags = [self._sanitize_tag(tag) for tag in tags]
+            self.mutate_reactive(TagsCollection.tags)
+
+    def add_tag(self, *tags: str | Tag):
+        for tag in tags:
+            tag = self._sanitize_tag(tag)
+            self.tags.append(tag)
+        self.mutate_reactive(TagsCollection.tags)
+
+    def delete_tag(self, tag: str | Tag):
+        tag = self._sanitize_tag(tag)
+        self.tags.remove(tag)
+        self.mutate_reactive(TagsCollection.tags)
+
+    def on_tag_deleted(self, message: Tag.Deleted):
+        self.delete_tag(message.tag)
+
+    def compose(self) -> ComposeResult:
+        scrollable = ScrollableContainer(*self.tags)
+        scrollable.can_focus = False
+        yield scrollable
+
+    @property
+    def values(self):
+        return [tag.value for tag in self.tags]
+
+
 class ArgumentInput(Widget):
-    result: reactive[list[str]] = reactive(list, recompose=True)
-    highlighted: reactive[int] = reactive(int, recompose=True)
+    BINDINGS = [("ctrl+c", "cancel", "Cancel")]
 
     class Submitted(Message):
         def __init__(self, value: List[str] | str) -> None:
@@ -88,17 +163,20 @@ class ArgumentInput(Widget):
         super().__init__()
         self.argument = argument
         self.with_history = not argument.password
-        self.label_widget = Label(f"{self.argument.name}=")
+        self.tags = TagsCollection() if self.argument.multi else None
 
         suggester = None
         if suggested_values:
             suggester = SuggestFromList(list(filter(None, suggested_values)))
-        self.input_widget = Input(password=argument.password, suggester=suggester)
+        self.input_widget = Input(
+            password=argument.password,
+            suggester=suggester,
+            id="user_input",
+            placeholder="value",
+        )
 
         if argument.multi and argument.value and isinstance(argument.value, list):
-            self.result = argument.value
-            self.highlighted = len(self.result) - 1
-            self.mutate_reactive(ArgumentInput.result)
+            self.tags.add_tag(*argument.value)
         elif argument.value:
             self.input_widget.value = argument.value
 
@@ -112,67 +190,35 @@ class ArgumentInput(Widget):
             self.shelf[self.argument.name] = self.history.values
             self.shelf.close()
 
-    def set_text(self, value: str):
+    def set_value(self, value: str):
         self.input_widget.value = value
 
     def compose(self) -> ComposeResult:
-        with Vertical():
-            yield Horizontal(self.label_widget, self.input_widget, id="labelled-input")
-            if self.argument.multi:
-                parts = []
-                for idx, r in enumerate(self.result):
-                    classes = (
-                        "result highlighted" if idx == self.highlighted else "result"
-                    )
-                    parts.append(Label(r, classes=classes))
-                parts.append(self.input_widget)
-                yield Horizontal(*parts, classes="highlights")
+        yield self.input_widget
+        if self.argument.multi:
+            yield self.tags
 
     def focus(self, *args, **kwargs):
         self.input_widget.focus(*args, **kwargs)
 
-    def on_key(self, event: events.Key) -> None:
-        match event.key:
-            case "enter":
-                if self.input_widget.value and self.with_history:
-                    self.history.add(self.input_widget.value)
+    def on_input_submitted(self, event: Input.Submitted):
+        if self.input_widget.value and self.with_history:
+            self.history.add(self.input_widget.value)
 
-                if self.argument.multi:
-                    if not self.input_widget.value:
-                        self.post_message(self.Submitted(self.result))
-                    else:
-                        self.result.append(self.input_widget.value)
-                        self.highlighted = len(self.result) - 1
-                        self.mutate_reactive(ArgumentInput.result)
-                        self.input_widget.value = ""
-                        self.input_widget.focus()
-                else:
-                    self.post_message(self.Submitted(self.input_widget.value))
-                event.stop()
+        if self.argument.multi:
+            if not self.input_widget.value:
+                self.post_message(self.Submitted(self.tags.values))
+            else:
+                self.tags.add_tag(self.input_widget.value)
+                self.input_widget.value = ""
+                self.input_widget.focus()
+        else:
+            self.post_message(self.Submitted(self.input_widget.value))
+        event.stop()
 
-            case "ctrl+c":
-                if self.input_widget.value:
-                    self.input_widget.value = ""
-                else:
-                    self.post_message(self.Submitted(None))
-                event.stop()
-
-            case "left":
-                if not self.input_widget.value and self.result:
-                    self.highlighted = max(0, self.highlighted - 1)
-                    self.input_widget.focus()
-
-            case "right":
-                if not self.input_widget.value and self.result:
-                    self.highlighted = min(len(self.result) - 1, self.highlighted + 1)
-                    self.input_widget.focus()
-
-            case "backspace":
-                if not self.input_widget.value and self.result:
-                    self.result.pop(self.highlighted)
-                    self.highlighted = 0
-                    self.mutate_reactive(ArgumentInput.result)
-                    self.input_widget.focus()
+    def action_cancel(self) -> None:
+        self.input_widget.value = ""
+        self.post_message(self.Submitted(None))
 
 
 class SuggestionsWidget(Widget):
@@ -211,6 +257,7 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         self.argument = argument
         self._init_suggestions()
         self.input_widget = ArgumentInput(argument, self.suggested_values)
+        self.input_widget.border_title = argument.name
 
     def _init_suggestions(self):
         self.suggested_values = []
@@ -231,12 +278,6 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         if self.suggested_values:
             self.suggestions_widget = SuggestionsWidget(self.suggested_values)
 
-    def compose(self) -> ComposeResult:
-        with Vertical():
-            if self.suggestions_widget is not None:
-                yield self.suggestions_widget
-            yield self.input_widget
-
     def on_mount(self):
         self.input_widget.focus()
 
@@ -250,12 +291,15 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         self.dismiss(message.value)
 
     def on_option_list_option_selected(self, message: OptionList.OptionSelected):
-        from textual import log
         value = message.option.prompt
-        log(f"PROMPT: {value}")
-        self.input_widget.set_text(value)
+        self.input_widget.set_value(value)
         self.input_widget.focus()
         message.stop()
+
+    def compose(self) -> ComposeResult:
+        if self.suggestions_widget is not None:
+            yield self.suggestions_widget
+        yield self.input_widget
 
 
 class CommandResultsWidget(Widget):
