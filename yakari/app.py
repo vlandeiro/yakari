@@ -6,7 +6,7 @@ from typing import List, Literal
 from rich.text import Text
 from textual import events, work
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical, ScrollableContainer
+from textual.containers import Horizontal, ScrollableContainer
 from textual.reactive import reactive
 from textual.screen import ModalScreen, Screen
 from textual.suggester import SuggestFromList
@@ -60,11 +60,11 @@ class ChoiceArgumentInputScreen(ModalScreen[int | List[str] | None]):
         else:
             self.widget = OptionList(*argument.choices)
             self.result_attr = "highlighted"
-        super().__init__()
+        self.widget.border_title = self.argument.name
+        super().__init__(classes="input-screen")
 
     def compose(self) -> ComposeResult:
-        with Vertical():
-            yield self.widget
+        yield self.widget
 
     def on_key(self, event: events.Key) -> None:
         result = getattr(self.widget, self.result_attr)
@@ -253,7 +253,7 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
     """
 
     def __init__(self, argument: ValueArgument):
-        super().__init__()
+        super().__init__(classes="input-screen")
         self.argument = argument
         self._init_suggestions()
         self.input_widget = ArgumentInput(argument, self.suggested_values)
@@ -351,6 +351,7 @@ class ResultScreen(ModalScreen):
     def __init__(self):
         super().__init__()
         self.cmd_results_widget = CommandResultsWidget()
+        self.cmd_results_widget.border_title = "Results"
 
     def compose(self) -> ComposeResult:
         yield self.cmd_results_widget

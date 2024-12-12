@@ -47,10 +47,6 @@ Horizontal .help {
     text-style: bold;
 }
 
-ModalScreen {
-    align: center middle;
-}
-
 ModalScreen Input {
     border: none;
     height: auto;
@@ -62,26 +58,28 @@ ModalScreen > Vertical {
     align: center middle;
 }
 
-ResultScreen RichLog {
+ResultScreen > CommandResultsWidget {
     width: 100%;
-    height: 80%;
+    height: 70vh;
     border-top: $primary wide;
-    padding: 1;
+    border-title-align: center;
+    border-title-style: bold;
     margin: 0;
     dock: bottom;
 }
 
-ResultScreen Horizontal #help-section {
-    width: 100%;
+ResultScreen RichLog {
+    padding: 1;
+    background: $background;
 }
 
-ValueArgumentInputScreen {
+ModalScreen.input-screen {
     layout: vertical;
     align: center middle;
     padding: 1;
 }
 
-ValueArgumentInputScreen > Widget {
+ModalScreen.input-screen > Widget {
     height: auto;
     max-width: 70w;
 }
