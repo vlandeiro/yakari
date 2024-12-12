@@ -7,7 +7,50 @@ user-friendly.
 
 ## Getting started
 
+### Usage
+
 <img src="./static/yakari.png" width="220" align="right" />
+
+``` bash
+usage: yakari [-h] [-d] [-n] command_name
+
+positional arguments:
+  command_name   Name of the command to execute
+
+options:
+  -h, --help     show this help message and exit
+  -d, --dry-run  If toggled, Yakari only prints the command rather than running it.
+  -n, --native   When toggled, run the command in the original shell instead of within the Yakari menu.
+```
+
+### Try it out!
+
+With [uv](https://github.com/astral-sh/uv):
+
+``` bash
+uvx --from git+https://github.com/vlandeiro/yakari yakari demo
+```
+
+will start a demo that showcases the different types or arguments and commands.
+This demo doesn't run any actual command other than `echo` so it's safe to use
+anywhere.
+
+``` bash
+uvx --from git+https://github.com/vlandeiro/yakari yakari git
+```
+
+will start a TUI with basic `git` features. The video below shows how to use
+this TUI to:
+
+- list branches
+- create and checkout a new `demo` branch
+- add a file and create a commit
+- check the git log to validate that the commit has been created
+- delete the `demo` branch
+
+https://github.com/user-attachments/assets/4202d30c-180a-4740-9e69-2b123f2e6dd4
+
+Play around with this in a git repo!
 
 ### Basic Navigation
 
@@ -46,27 +89,6 @@ Edit Mode (press `ctrl+e` to switch):
 - Selecting an argument lets you edit its value
 - Perfect for editing named argument with an existing value
 
-### Try it out!
-
-#### Arguments and commands showcase
-
-With [uv](https://github.com/astral-sh/uv) installed, run `uvx --from git+https://github.com/vlandeiro/yakari yakari https://raw.githubusercontent.com/vlandeiro/yakari-menus/refs/heads/main/demo.toml`
-to start a demo that showcases the different types or arguments and commands. This demo doesn't run any actual command other than `echo` so it's safe to use anywhere.
-
-#### Git example
-
-Running `uvx --from git+https://github.com/vlandeiro/yakari yakari https://raw.githubusercontent.com/vlandeiro/yakari-menus/refs/heads/main/git.toml`
-will start a TUI with basic `git` features. The video below shows how to use this TUI to:
-
-- list branches
-- create and checkout a new `demo` branch
-- add a file and create a commit
-- check the git log to validate that the commit has been created
-- delete the `demo` branch
-
-https://github.com/user-attachments/assets/4202d30c-180a-4740-9e69-2b123f2e6dd4
-
-Play around with this in a git repo!
 
 ### (Optional) Installation
 
@@ -81,8 +103,10 @@ uv add git+https://github.com/vlandeiro/yakari.git
 ```
 
 > [!TIP]
-> Yakari comes with a set of [pre-defined menus](https://github.com/vlandeiro/yakari-menus).
-> Copy the menus you want to use into `~/.config/yakari/menus` (e.g. `git.toml`) so you can run `yakari git` instead of `yakari https://raw.githubusercontent.com/vlandeiro/yakari-menus/refs/heads/main/git.toml`
+> Yakari comes with a set of [pre-defined menus](https://github.com/vlandeiro/yakari-menus)
+> that you can use via `yakari <command-name>` (e.g. `yakari git`) without having to copy
+> them to your machine.
+
 
 ## Features
 
@@ -100,8 +124,8 @@ uv add git+https://github.com/vlandeiro/yakari.git
   - Multi-value argument
 
 ### Roadmap
-- Add documentation on creating custom menus
 - Add unit tests everywhere
+- Add documentation on creating custom menus
 - Publish to PyPi
 - Add argument types:
   - File argument
