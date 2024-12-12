@@ -359,6 +359,7 @@ class Menu(YakariType):
             config_path = command_name
 
         elif command_name.startswith(("http://", "https://")):  # url
+            # resolve the URL to a local path
             url = command_name
             parsed_url = urllib.parse.urlparse(url)
             filename = urllib.parse.unquote(Path(parsed_url.path).name)
@@ -370,8 +371,12 @@ class Menu(YakariType):
             base_path = C.YAKARI_HOME / C.MENUS_DIR
             config_path = (base_path / command_name).with_suffix(".toml")
 
-        if not (config_path.exists() and config_path.is_file()):
-            raise ValueError(f"No configuration found for '{command_name}'.")
+        if not (config_path.exists() and config_path.is_file()): # no local configuration exists
+            try:
+                # try to retrieve an online configuration
+                return cls.from_toml(f"{C.REMOTE_DEFAULT}/{command_name}.toml")
+            except Exception:
+                raise ValueError(f"No configuration found for '{command_name}'.")
 
         with config_path.open("r") as fd:
             model = tomlkit.load(fd).unwrap()
