@@ -399,7 +399,10 @@ class MenuScreen(Screen):
         if self.app.inplace:
             shortcut_description["/"] = "results"
         shortcut_description["backspace"] = "erase / go back"
-        shortcut_description["ctrl+e"] = "toggle edit mode"
+        if self.edit_mode:
+            shortcut_description["ctrl+e"] = "normal mode"
+        else:
+            shortcut_description["ctrl+e"] = "edit mode"
         shortcut_description["ctrl+c"] = "quit"
 
         labels = [Label("Shortcuts:", classes="title")]
@@ -408,12 +411,7 @@ class MenuScreen(Screen):
             labels.append(Label(description))
         help_display = Horizontal(*labels, id="help-section")
 
-        is_edit_mode = "yes" if self.edit_mode else "no"
-        mode_display = Horizontal(
-            Label("Edit:", classes="title"), Label(is_edit_mode), id="mode"
-        )
-
-        yield Horizontal(cur_input_display, help_display, mode_display, id="footer")
+        yield Horizontal(cur_input_display, help_display, id="footer")
 
     def action_show_results(self):
         if self.app.inplace:

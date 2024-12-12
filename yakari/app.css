@@ -24,17 +24,12 @@ MenuScreen #cur-input {
 }
 
 MenuScreen #help-section {
-    width: 80vw;
+    width: 90vw;
     align: center middle;
 }
 
 #help-section Label {
     margin: 0 1;
-}
-
-MenuScreen #mode {
-    width: 10vw;
-    align: right middle;
 }
 
 Horizontal .title {
