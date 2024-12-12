@@ -1,6 +1,5 @@
 import asyncio
 import shelve
-from collections import deque
 from pathlib import Path
 from typing import List, Literal
 
@@ -21,6 +20,7 @@ from textual.widgets import (
 )
 from textual.widget import Widget
 from textual.message import Message
+from textual.widgets.option_list import Option, Separator
 
 from . import constants as C
 from .rich_render import render_menu
@@ -84,16 +84,15 @@ class ArgumentInput(Widget):
             self.value = value
             super().__init__()
 
-    def __init__(self, argument: Argument, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, argument: Argument, suggested_values: List[str] | None = None):
+        super().__init__()
         self.argument = argument
         self.with_history = not argument.password
-
         self.label_widget = Label(f"{self.argument.name}=")
 
         suggester = None
-        if argument.suggestions:
-            suggester = SuggestFromList(argument.suggestions.values)
+        if suggested_values:
+            suggester = SuggestFromList(list(filter(None, suggested_values)))
         self.input_widget = Input(password=argument.password, suggester=suggester)
 
         if argument.multi and argument.value and isinstance(argument.value, list):
@@ -106,7 +105,7 @@ class ArgumentInput(Widget):
     def on_mount(self):
         if self.with_history:
             self.shelf = shelve.open(C.HISTORY_FILE, writeback=True)
-            self.history = History(values=self.shelf.get(self.argument.name, deque()))
+            self.history = History(values=self.shelf.get(self.argument.name, dict()))
 
     def on_unmount(self):
         if self.with_history:
@@ -154,27 +153,9 @@ class ArgumentInput(Widget):
             case "ctrl+c":
                 if self.input_widget.value:
                     self.input_widget.value = ""
-                    if self.with_history:
-                        self.history.restart()
                 else:
                     self.post_message(self.Submitted(None))
                 event.stop()
-
-            case "down":
-                if (
-                    self.with_history
-                    and (prev_value := self.history.prev)
-                    and (prev_value is not None)
-                ):
-                    self.input_widget.value = prev_value
-
-            case "up":
-                if (
-                    self.with_history
-                    and (next_value := self.history.next)
-                    and (next_value is not None)
-                ):
-                    self.input_widget.value = next_value
 
             case "left":
                 if not self.input_widget.value and self.result:
@@ -194,7 +175,7 @@ class ArgumentInput(Widget):
                     self.input_widget.focus()
 
 
-class SuggestionsList(Widget):
+class SuggestionsWidget(Widget):
     class SuggestionSelected(Message):
         def __init__(self, value: str):
             self.value = value
@@ -202,21 +183,20 @@ class SuggestionsList(Widget):
 
     def __init__(self, suggested_values: List[str]):
         super().__init__()
-        self.suggested_values = suggested_values
+        self.suggested_values = list(filter(None, suggested_values))
+        fmt_suggested_values = [
+            Option(value) if value is not None else Separator()
+            for value in suggested_values
+        ]
 
         self.suggestions_widget = OptionList(
-            *self.suggested_values,
+            *fmt_suggested_values,
             id="suggestions",
         )
         self.suggestions_widget.border_title = "Suggested values"
 
     def compose(self) -> ComposeResult:
         yield self.suggestions_widget
-
-    def on_option_list_option_selected(self, message: OptionList.OptionSelected):
-        self.post_message(
-            self.SuggestionSelected(self.suggested_values[message.option_index])
-        )
 
 
 class ValueArgumentInputScreen(ModalScreen[str | None]):
@@ -229,20 +209,27 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
     def __init__(self, argument: ValueArgument):
         super().__init__()
         self.argument = argument
-        self.input_widget = ArgumentInput(argument)
-        self.suggestions_widget = None
-        if self.argument.suggestions:
-            self.suggestions_widget = SuggestionsList(self.argument.suggestions.values)
+        self._init_suggestions()
+        self.input_widget = ArgumentInput(argument, self.suggested_values)
 
     def _init_suggestions(self):
-        self.suggester = None
-        self.suggested_values = None
+        self.suggested_values = []
         self.suggestions_widget = None
 
+        # Load suggestions from history
+        if not self.argument.password:
+            with shelve.open(C.HISTORY_FILE, writeback=True) as shelf:
+                arg_history = shelf.get(self.argument.name, dict())
+                self.suggested_values.extend(list(arg_history)[::-1])
+
+        # Load suggestions from hard-coded list, executed command, or other methods
         if self.argument.suggestions:
-            self.suggested_values = self.argument.suggestions.values
-            self.suggester = SuggestFromList(self.suggested_values)
-            self.suggestions_widget = self._make_suggestions_widget()
+            if self.suggested_values:
+                self.suggested_values.append(None)
+            self.suggested_values.extend(self.argument.suggestions.values)
+
+        if self.suggested_values:
+            self.suggestions_widget = SuggestionsWidget(self.suggested_values)
 
     def compose(self) -> ComposeResult:
         with Vertical():
@@ -262,10 +249,11 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
     def on_argument_input_submitted(self, message: ArgumentInput.Submitted):
         self.dismiss(message.value)
 
-    def on_suggestions_list_suggestion_selected(
-        self, message: SuggestionsList.SuggestionSelected
-    ):
-        self.input_widget.set_text(message.value)
+    def on_option_list_option_selected(self, message: OptionList.OptionSelected):
+        from textual import log
+        value = message.option.prompt
+        log(f"PROMPT: {value}")
+        self.input_widget.set_text(value)
         self.input_widget.focus()
         message.stop()
 

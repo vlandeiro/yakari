@@ -8,9 +8,8 @@ import subprocess
 import urllib
 import urllib.request
 from abc import ABC, abstractmethod
-from collections import deque
 from pathlib import Path
-from typing import Awaitable, Callable, Deque, Dict, List, Literal, Self
+from typing import Awaitable, Callable, Dict, List, Literal, Self
 
 import tomlkit
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
@@ -28,51 +27,21 @@ class YakariType(BaseModel):
 class History(YakariType):
     """A class managing command history with navigation capabilities."""
 
-    values: Deque[str] = Field(default_factory=deque)
+    values: Dict[str, int] = Field(default_factory=dict)
+    max_size: int = 20
     _cur_pos: int | None = PrivateAttr(default=None)
-
-    def model_post_init(self, context):
-        self.restart()
 
     def add(self, value: str):
         if not value:
             return
-        if not self.values or (self.values and self.values[0] != value):
-            self.values.appendleft(value)
 
-    def restart(self):
-        if self.values:
-            self._cur_pos = -1
-        else:
-            self._cur_pos = None
+        if value in self.values:
+            del self.values[value]
+        self.values[value] = 1
 
-    @property
-    def current(self) -> str | None:
-        if self._cur_pos is None or self._cur_pos == -1:
-            return None
-        return self.values[self._cur_pos]
-
-    @property
-    def prev(self) -> str | None:
-        if self._cur_pos is None:
-            return None
-        prev_index = self._cur_pos + 1
-        if prev_index >= len(self.values):
-            self._cur_pos = 0
-        else:
-            self._cur_pos = prev_index
-        return self.values[self._cur_pos]
-
-    @property
-    def next(self) -> str | None:
-        if self._cur_pos is None:
-            return None
-        next_index = self._cur_pos - 1
-        if next_index < 0:
-            self._cur_pos = len(self.values) - 1
-        else:
-            self._cur_pos = next_index
-        return self.values[self._cur_pos]
+        if len(self.values) > self.max_size:
+            first_key = self.tolist()[0]
+            del self.values[first_key]
 
 
 class MatchResult(YakariType):
