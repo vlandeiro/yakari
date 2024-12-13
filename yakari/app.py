@@ -303,49 +303,137 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
 
 
 class CommandResultsWidget(Widget):
+    can_focus_children = True
+
+    process_finished: reactive(bool) = reactive(False, recompose=True)
+
     def __init__(self):
         super().__init__()
-        self.log_widget = RichLog(highlight=True, wrap=True)
+        self.log_widget = RichLog(highlight=True, wrap=True, auto_scroll=True)
+        self.log_widget.can_focus = False
+        self.user_input = Input(placeholder="Interact with your program")
+        self.subprocess: asyncio.subprocess.Process | None = None
+        self.extra_stdout: bytes = b""
+        self.extra_stdout_lock = asyncio.Lock()
 
     @work
-    async def execute_command(self, command: List[str]):
-        self.write(Text(f"$> {' '.join(command)}"))
+    async def start_subprocess(self, command: List[str]):
+        """Start the subprocess and stream its output."""
+        self.log_widget.write(Text(f"$> {' '.join(command)}"))
+        try:
+            # Start the subprocess
+            self.process_finished = False
+            self.subprocess = await asyncio.create_subprocess_exec(
+                *command,
+                stdout=asyncio.subprocess.PIPE,
+                stdin=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
 
-        # Create the subprocess
-        process = await asyncio.create_subprocess_exec(
-            *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
-        )
+            # Stream the subprocess output
+            asyncio.create_task(self.stream_stdout(self.subprocess.stdout))
+            asyncio.create_task(self.stream_stderr(self.subprocess.stderr))
+            asyncio.create_task(self.extra_stdout_watcher())
 
-        # Async function to read lines from a stream
-        async def read_stream(stream):
-            while not stream.at_eof():
-                line = await stream.readline()
-                if line:
-                    payload = line.decode().strip()
-                    self.write(Text(payload), scroll_end=True)
-            self.write("")
+            # Wait for the process to finish and display the final message once
+            return_code = await self.subprocess.wait()
 
-        # Concurrently read stdout and stderr
-        stdout, stderr = await asyncio.gather(
-            read_stream(process.stdout), read_stream(process.stderr)
-        )
+            if not self.process_finished:  # Only show this once
+                self.log_widget.write(
+                    Text(
+                        f"[Command finished ({return_code})]\n",
+                        style="red" if return_code else "green",
+                    )
+                )
+                self.process_finished = True
 
-        # Wait for the process to complete and get return code
-        return_code = await process.wait()
+            self.subprocess = None
+        except Exception as e:
+            self.log_widget.write(Text(f"Error: {e}"))
 
-        return return_code
+    async def extra_stdout_watcher(self):
+        SLEEP = 0.1
+
+        while self.subprocess is not None:
+            async with self.extra_stdout_lock:
+                extra_before = self.extra_stdout
+
+            await asyncio.sleep(SLEEP)
+
+            async with self.extra_stdout_lock:
+                extra_after = self.extra_stdout
+                if extra_before and extra_before == extra_after:
+                    self.log_widget.write(Text(self.extra_stdout.decode()))
+                    self.extra_stdout = b""
+
+    async def stream_stderr(self, stream):
+        while not stream.at_eof():
+            payload = await stream.readline()
+            self.log_widget.write(Text(payload.decode(), style="red"))
+
+    async def stream_stdout(self, stream):
+        """Continuously read lines from the given stream and display them."""
+        READSIZE = 2048
+
+        while not stream.at_eof():
+            payload = await stream.read(READSIZE)
+            payload, *extra = payload.rsplit(b"\n", 1)
+
+            async with self.extra_stdout_lock:
+                payload = self.extra_stdout + payload
+                self.log_widget.write(Text(payload.decode().strip()))
+
+            if extra:
+                async with self.extra_stdout_lock:
+                    self.extra_stdout = extra[0]
+            else:
+                payload = b""
+                async with self.extra_stdout_lock:
+                    self.extra_stdout = b""
+
+    async def send_input(self, user_input: str):
+        """Send user input to the subprocess."""
+        if self.subprocess and self.subprocess.stdin:
+            self.subprocess.stdin.write(user_input.encode() + b"\n")
+            await self.subprocess.stdin.drain()
+            self.log_widget.write(f"\nI> {user_input}")
+
+    async def terminate_subprocess(self):
+        if self.subprocess:
+            self.subprocess.terminate()
+            await self.subprocess.wait()
+
+    async def on_input_submitted(self, event: Input.Submitted):
+        """Handle input submission."""
+        user_input = self.user_input.value
+        await self.send_input(user_input)
+        self.user_input.value = ""
 
     def write(self, *args, **kwargs):
         self.log_widget.write(*args, **kwargs)
 
     def compose(self) -> ComposeResult:
+        if not self.process_finished:
+            yield self.user_input
+            self.user_input.focus()
         yield self.log_widget
+
+    async def on_key(self, event: events.Key):
+        match event.key:
+            case "ctrl+l":
+                self.log_widget.clear()
+                event.stop()
+            case "ctrl+c":
+                await self.terminate_subprocess()
+                event.stop()
+
+    async def on_unmount(self):
+        await self.terminate_subprocess()
 
 
 class ResultScreen(ModalScreen):
     BINDINGS = [
-        ("q", "pop_screen", "Quit"),
-        ("slash", "pop_screen", "Quit"),
+        ("ctrl+r", "pop_screen", "Quit"),
     ]
 
     def __init__(self):
@@ -370,7 +458,7 @@ class MenuScreen(Screen):
     BINDINGS = [
         ("backspace", "backspace_input", "Erase"),
         ("tab", "complete_input", "Complete"),
-        ("slash", "show_results", "Show Results"),
+        ("ctrl+r", "show_results", "Show Results"),
         ("ctrl+e", "change_mode", "Toggle mode"),
     ]
 
@@ -587,7 +675,7 @@ class MenuScreen(Screen):
         else:
             if inplace:
                 self.app.push_screen("results")
-                results_widget.execute_command(self.app.command)
+                results_widget.start_subprocess(self.app.command)
             else:
                 self.app.exit(
                     result=self.app.command, return_code=0, message=command_str

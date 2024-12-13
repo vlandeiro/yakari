@@ -71,7 +71,7 @@ Other important keyboard shortcuts let you interact with the TUI:
 | ctrl+c      | Cancel/Exit              |
 | backspace   | Erase/Go back            |
 | tab         | Auto-complete            |
-| slash       | Toggle results           |
+| ctrl+r      | Toggle results           |
 | ctrl+e      | Toggle edit mode         |
 
 > ![screenshot illustrating how yakari highlights compatible commands based on user's input](https://github.com/user-attachments/assets/95489bcd-832a-488b-b4eb-e75b5bcb30ec)
@@ -115,7 +115,7 @@ uv add git+https://github.com/vlandeiro/yakari.git
 - Works alongside existing CLI tools
 - Command history across executions
 - Static and dynamic suggestions
-- In-place command execution with streamed output
+- In-place command execution with streamed output and support for interactive commands
 - Supported argument types:
   - Flag argument
   - Single-value argument
@@ -130,7 +130,6 @@ uv add git+https://github.com/vlandeiro/yakari.git
 - Add argument types:
   - File argument
 - Support environment variables
-- Support interactive commands when running in place
 
 ## References
 
