@@ -203,8 +203,11 @@ def render_menu(menu: Menu, user_input: str):
             else menu.menus.items()
         )
         for key, prefix in menu_items:
+            style = None
+            if should_dim(key, user_input):
+                style = DIM_STYLE
             key = render_key(key, user_input)
-            table.add_row(key, prefix.name)
+            table.add_row(key, prefix.name, style=style)
         yield Padding(table, TABLE_PADDING)
 
     if menu.arguments:

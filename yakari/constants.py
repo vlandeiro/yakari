@@ -12,6 +12,8 @@ TEMPORARY_MENUS_DIR = "temporary_menus"
 HISTORY_FILENAME = "history"
 HISTORY_FILE = YAKARI_HOME / HISTORY_FILENAME
 
-REMOTE_DEFAULT = "https://raw.githubusercontent.com/vlandeiro/yakari-menus/refs/heads/main"
+REMOTE_DEFAULT = (
+    "https://raw.githubusercontent.com/vlandeiro/yakari-menus/refs/heads/main"
+)
 
 HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)

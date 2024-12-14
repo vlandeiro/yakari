@@ -55,23 +55,24 @@ class ChoiceArgumentInputScreen(ModalScreen[int | List[str] | None]):
                 (choice, choice, True) if choice in selected else (choice, choice)
                 for choice in argument.choices
             ]
-            self.widget = SelectionList(*selections)
+            self.widget = SelectionList(*selections, classes="input-widget")
             self.result_attr = "selected"
         else:
-            self.widget = OptionList(*argument.choices)
+            self.widget = OptionList(*argument.choices, classes="input-widget")
             self.result_attr = "highlighted"
         self.widget.border_title = self.argument.name
         super().__init__(classes="input-screen")
 
     def compose(self) -> ComposeResult:
         yield self.widget
+        yield Footer(self)
 
     def on_key(self, event: events.Key) -> None:
         result = getattr(self.widget, self.result_attr)
         match event.key:
             case "enter":
                 self.dismiss(result)
-            case "ctrl+c":
+            case "ctrl+q":
                 self.dismiss(None)
                 event.stop()
 
@@ -142,9 +143,10 @@ class TagsCollection(Widget):
         self.delete_tag(message.tag)
 
     def compose(self) -> ComposeResult:
-        scrollable = ScrollableContainer(*self.tags)
-        scrollable.can_focus = False
-        yield scrollable
+        if self.tags:
+            scrollable = ScrollableContainer(*self.tags)
+            scrollable.can_focus = False
+            yield scrollable
 
     @property
     def values(self):
@@ -152,18 +154,24 @@ class TagsCollection(Widget):
 
 
 class ArgumentInput(Widget):
-    BINDINGS = [("ctrl+c", "cancel", "Cancel")]
+    BINDINGS = [("ctrl+q", "cancel", "Cancel")]
 
     class Submitted(Message):
         def __init__(self, value: List[str] | str) -> None:
             self.value = value
             super().__init__()
 
-    def __init__(self, argument: Argument, suggested_values: List[str] | None = None):
-        super().__init__()
+    def __init__(
+        self,
+        argument: Argument,
+        suggested_values: List[str] | None = None,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
         self.argument = argument
         self.with_history = not argument.password
-        self.tags = TagsCollection() if self.argument.multi else None
+        self.tags = TagsCollection()
 
         suggester = None
         if suggested_values:
@@ -227,8 +235,8 @@ class SuggestionsWidget(Widget):
             self.value = value
             super().__init__()
 
-    def __init__(self, suggested_values: List[str]):
-        super().__init__()
+    def __init__(self, suggested_values: List[str], *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.suggested_values = list(filter(None, suggested_values))
         fmt_suggested_values = [
             Option(value) if value is not None else Separator()
@@ -256,7 +264,9 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         super().__init__(classes="input-screen")
         self.argument = argument
         self._init_suggestions()
-        self.input_widget = ArgumentInput(argument, self.suggested_values)
+        self.input_widget = ArgumentInput(
+            argument, self.suggested_values, classes="input-widget"
+        )
         self.input_widget.border_title = argument.name
 
     def _init_suggestions(self):
@@ -276,14 +286,16 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
             self.suggested_values.extend(self.argument.suggestions.values)
 
         if self.suggested_values:
-            self.suggestions_widget = SuggestionsWidget(self.suggested_values)
+            self.suggestions_widget = SuggestionsWidget(
+                self.suggested_values, classes="input-widget"
+            )
 
     def on_mount(self):
         self.input_widget.focus()
 
     def on_key(self, event: events.Key):
         match event.key:
-            case "ctrl+c":
+            case "ctrl+q":
                 self.dismiss(None)
                 event.stop()
 
@@ -300,6 +312,7 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
         if self.suggestions_widget is not None:
             yield self.suggestions_widget
         yield self.input_widget
+        yield Footer(self)
 
 
 class CommandResultsWidget(Widget):
@@ -413,7 +426,7 @@ class CommandResultsWidget(Widget):
         self.log_widget.write(*args, **kwargs)
 
     def compose(self) -> ComposeResult:
-        if not self.process_finished:
+        if self.subprocess:
             yield self.user_input
             self.user_input.focus()
         yield self.log_widget
@@ -423,7 +436,7 @@ class CommandResultsWidget(Widget):
             case "ctrl+l":
                 self.log_widget.clear()
                 event.stop()
-            case "ctrl+c":
+            case "ctrl+q":
                 await self.terminate_subprocess()
                 event.stop()
 
@@ -443,9 +456,73 @@ class ResultScreen(ModalScreen):
 
     def compose(self) -> ComposeResult:
         yield self.cmd_results_widget
+        yield Footer(self)
 
     def action_pop_screen(self):
         self.app.pop_screen()
+
+
+class Footer(Widget):
+    def __init__(self, cur_screen: Screen):
+        super().__init__()
+        self.cur_screen = cur_screen
+
+    def _get_full_input(self) -> str:
+        inputs = []
+        for screen in self.app.screen_stack:
+            if isinstance(screen, MenuScreen):
+                inputs.append(screen.cur_input)
+        return inputs
+
+    def compose(self):
+        inputs = self._get_full_input()
+
+        yield Label(" > ".join(inputs))
+
+        match self.cur_screen:
+            case ResultScreen():
+                bindings = [
+                    ("ctrl+r", "hide results"),
+                ]
+                if self.cur_screen.cmd_results_widget.subprocess:
+                    bindings += [
+                        ("enter", "submit input"),
+                        ("ctrl+q", "terminate command"),
+                    ]
+            case MenuScreen():
+                mode = "mode: edit" if self.cur_screen.edit_mode else "mode: normal"
+                bindings = [
+                    ("backspace", "erase" if inputs[-1] else "back"),
+                    ("ctrl+r", "show results"),
+                    ("ctrl+e", mode),
+                    ("ctrl+q", "quit"),
+                ]
+            case ChoiceArgumentInputScreen():
+                screen: ChoiceArgumentInputScreen = self.cur_screen
+                if screen.argument.multi:
+                    bindings = [("space", "toggle option")]
+                bindings = [
+                    ("enter", "submit input"),
+                    ("ctrl+q", "cancel"),
+                ]
+            case ValueArgumentInputScreen():
+                bindings = []
+                screen: ValueArgumentInputScreen = self.cur_screen
+                if screen.argument.multi:
+                    bindings = [("backspace", "delete selection")]
+
+                bindings += [
+                    ("tab", "focus next"),
+                    ("shift+tab", "focus previous"),
+                    ("enter", "submit input"),
+                    ("ctrl+q", "cancel"),
+                ]
+
+        labels = [Label("Shortcuts:", classes="title")]
+        for shortcut, description in bindings:
+            labels.append(Label(f"({shortcut})", classes="help"))
+            labels.append(Label(description))
+        yield Horizontal(*labels, id="help-section")
 
 
 class MenuScreen(Screen):
@@ -458,48 +535,23 @@ class MenuScreen(Screen):
     BINDINGS = [
         ("backspace", "backspace_input", "Erase"),
         ("tab", "complete_input", "Complete"),
-        ("ctrl+r", "show_results", "Show Results"),
         ("ctrl+e", "change_mode", "Toggle mode"),
+        ("ctrl+r", "show_results", "Show Results"),
     ]
 
     cur_input = reactive("", recompose=True)
     edit_mode = reactive(False, recompose=True)
 
-    def __init__(
-        self, menu: Menu, is_entrypoint: bool = False, ancestor_input: str = ""
-    ):
+    def __init__(self, menu: Menu, is_entrypoint: bool = False):
         super().__init__()
         self.menu = menu
         self.is_entrypoint = is_entrypoint
-        self.ancestor_input = ancestor_input
         self.candidates = {**menu.arguments, **menu.menus, **menu.commands}
 
     def compose(self) -> ComposeResult:
         for renderable in render_menu(self.menu, self.cur_input):
             yield Static(renderable)
-
-        cur_input_display = Horizontal(
-            Label(self._get_full_input()),
-            id="cur-input",
-        )
-
-        shortcut_description = dict()
-        if self.app.inplace:
-            shortcut_description["/"] = "results"
-        shortcut_description["backspace"] = "erase / go back"
-        if self.edit_mode:
-            shortcut_description["ctrl+e"] = "normal mode"
-        else:
-            shortcut_description["ctrl+e"] = "edit mode"
-        shortcut_description["ctrl+c"] = "quit"
-
-        labels = [Label("Shortcuts:", classes="title")]
-        for shortcut, description in shortcut_description.items():
-            labels.append(Label(f"({shortcut})", classes="help"))
-            labels.append(Label(description))
-        help_display = Horizontal(*labels, id="help-section")
-
-        yield Horizontal(cur_input_display, help_display, id="footer")
+        yield Footer(self)
 
     def action_show_results(self):
         if self.app.inplace:
@@ -514,12 +566,6 @@ class MenuScreen(Screen):
 
     def action_change_mode(self):
         self.edit_mode = not self.edit_mode
-
-    def _get_full_input(self) -> str:
-        full_input = self.cur_input
-        if self.ancestor_input:
-            full_input = f"{self.ancestor_input} > {self.cur_input}"
-        return full_input
 
     @work
     async def action_complete_input(self):
@@ -688,9 +734,7 @@ class MenuScreen(Screen):
             menu (Menu): The submenu to display
         """
         menu._ancestors_arguments = self.menu.arguments
-        await self.app.push_screen_wait(
-            MenuScreen(menu, ancestor_input=self._get_full_input())
-        )
+        await self.app.push_screen_wait(MenuScreen(menu))
         self.cur_input = ""
 
     def string_matches_candidates(self, s: str) -> MatchResult:
@@ -716,9 +760,9 @@ class YakariApp(App):
     """Main application class for Yakari command-line interface."""
 
     CSS_PATH = "app.css"
-    COMMAND_PALETTE_BINDING = "question_mark"
+    ENABLE_COMMAND_PALETTE = False
     BINDINGS = [
-        ("ctrl+c", "quit", "Exit"),
+        ("ctrl+q", "quit", "Exit"),
     ]
 
     def __init__(

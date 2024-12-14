@@ -371,7 +371,9 @@ class Menu(YakariType):
             base_path = C.YAKARI_HOME / C.MENUS_DIR
             config_path = (base_path / command_name).with_suffix(".toml")
 
-        if not (config_path.exists() and config_path.is_file()): # no local configuration exists
+        if not (
+            config_path.exists() and config_path.is_file()
+        ):  # no local configuration exists
             try:
                 # try to retrieve an online configuration
                 return cls.from_toml(f"{C.REMOTE_DEFAULT}/{command_name}.toml")
