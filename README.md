@@ -69,10 +69,11 @@ Other important keyboard shortcuts let you interact with the TUI:
 
 | Key         | Action                   |
 |-------------|--------------------------|
-| ctrl+c      | Cancel/Exit              |
+| ctrl+q      | Cancel/Exit              |
 | backspace   | Erase/Go back            |
 | tab         | Auto-complete            |
 | ctrl+r      | Toggle results           |
+| ctrl+l      | Clear results            |
 | ctrl+e      | Toggle edit mode         |
 
 > ![screenshot illustrating how yakari highlights compatible commands based on user's input](https://github.com/user-attachments/assets/95489bcd-832a-488b-b4eb-e75b5bcb30ec)
