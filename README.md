@@ -20,7 +20,8 @@ positional arguments:
 options:
   -h, --help     show this help message and exit
   -d, --dry-run  If toggled, Yakari only prints the command rather than running it.
-  -n, --native   When toggled, run the command in the original shell instead of within the Yakari menu.
+  -n, --native   When toggled, run the command in the original shell instead of
+                 within the Yakari menu.
 ```
 
 ### Try it out!
@@ -48,7 +49,7 @@ this TUI to:
 - check the git log to validate that the commit has been created
 - delete the `demo` branch
 
-https://github.com/user-attachments/assets/4202d30c-180a-4740-9e69-2b123f2e6dd4
+https://github.com/user-attachments/assets/5e1a5f59-d0e0-4e43-9737-302b99e62cfa
 
 Play around with this in a git repo!
 
