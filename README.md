@@ -12,7 +12,7 @@ user-friendly.
 <img src="./static/yakari.png" width="220" align="right" />
 
 ``` bash
-usage: yakari [-h] [-d] [-n] command_name
+usage: ykr [-h] [-d] [-n] command_name
 
 positional arguments:
   command_name   Name of the command to execute
@@ -28,7 +28,7 @@ options:
 With [uv](https://github.com/astral-sh/uv):
 
 ``` bash
-uvx --from git+https://github.com/vlandeiro/yakari yakari demo
+uvx --from git+https://github.com/vlandeiro/yakari ykr demo
 ```
 
 will start a demo that showcases the different types or arguments and commands.
@@ -36,7 +36,7 @@ This demo doesn't run any actual command other than `echo` so it's safe to use
 anywhere.
 
 ``` bash
-uvx --from git+https://github.com/vlandeiro/yakari yakari git
+uvx --from git+https://github.com/vlandeiro/yakari ykr git
 ```
 
 will start a TUI with basic `git` features. The video below shows how to use
@@ -104,7 +104,7 @@ uv add git+https://github.com/vlandeiro/yakari.git
 
 > [!TIP]
 > Yakari comes with a set of [pre-defined menus](https://github.com/vlandeiro/yakari-menus)
-> that you can use via `yakari <command-name>` (e.g. `yakari git`) without having to copy
+> that you can use via `ykr <command-name>` (e.g. `ykr git`) without having to copy
 > them to your machine.
 
 
@@ -140,7 +140,6 @@ uv add git+https://github.com/vlandeiro/yakari.git
 
 ### Why Yakari?
 
-The name comes from a Franco-Belgian comic book character who can talk to
-animals. Similarly, this tool helps users communicate more naturally with
-command-line programs by turning intimidating command structures into guided
-conversations.
+The name comes from a Swiss comic book character who can talk to animals.
+Similarly, this tool helps users communicate more naturally with command-line
+programs by turning intimidating command structures into guided menus.

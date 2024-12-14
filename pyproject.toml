@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [project.scripts]
-yakari = "yakari.cli:main"
+ykr = "yakari.cli:main"
 
 [dependency-groups]
 dev = [
