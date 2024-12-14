@@ -433,9 +433,6 @@ class CommandResultsWidget(Widget):
 
     async def on_key(self, event: events.Key):
         match event.key:
-            case "ctrl+l":
-                self.log_widget.clear()
-                event.stop()
             case "ctrl+q":
                 await self.terminate_subprocess()
                 event.stop()
@@ -461,6 +458,12 @@ class ResultScreen(ModalScreen):
     def action_pop_screen(self):
         self.app.pop_screen()
 
+    async def on_key(self, event: events.Key):
+        match event.key:
+            case "ctrl+l":
+                self.cmd_results_widget.log_widget.clear()
+                event.stop()
+
 
 class Footer(Widget):
     def __init__(self, cur_screen: Screen):
@@ -482,6 +485,7 @@ class Footer(Widget):
         match self.cur_screen:
             case ResultScreen():
                 bindings = [
+                    ("ctrl+l", "clear"),
                     ("ctrl+r", "hide results"),
                 ]
                 if self.cur_screen.cmd_results_widget.subprocess:
@@ -509,12 +513,12 @@ class Footer(Widget):
                 bindings = []
                 screen: ValueArgumentInputScreen = self.cur_screen
                 if screen.argument.multi:
-                    bindings = [("backspace", "delete selection")]
+                    bindings = [("backspace", "delete")]
 
                 bindings += [
-                    ("tab", "focus next"),
-                    ("shift+tab", "focus previous"),
-                    ("enter", "submit input"),
+                    ("tab", "next"),
+                    ("shift+tab", "prev"),
+                    ("enter", "submit"),
                     ("ctrl+q", "cancel"),
                 ]
 
