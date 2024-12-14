@@ -1,8 +1,8 @@
 # Yakari
 
-Transform complex command-line interfaces into guided, interactive experiences. Yakari
-helps users build commands step by step, making CLI tools more accessible and
-user-friendly.
+Transform complex command-line interfaces into guided, interactive experiences.
+Yakari helps users build commands step by step, making CLI tools more accessible
+and user-friendly.
 
 
 ## Getting started
@@ -31,8 +31,8 @@ With [uv](https://github.com/astral-sh/uv):
 uvx --from git+https://github.com/vlandeiro/yakari ykr demo
 ```
 
-will start a demo that showcases the different types or arguments and commands.
-This demo doesn't run any actual command other than `echo` so it's safe to use
+will start a demo that showcases the different types or arguments and commands
+supported by Yakari. This demo only run `echo` commands so it's safe to use
 anywhere.
 
 ``` bash
