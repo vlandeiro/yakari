@@ -56,7 +56,7 @@ ModalScreen > Vertical {
 
 ResultScreen > CommandResultsWidget {
     width: 100%;
-    height: 70vh;
+    height: 90vh;
     border-top: $primary wide;
     border-title-align: center;
     border-title-style: bold;
