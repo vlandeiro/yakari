@@ -22,6 +22,8 @@ from ..types import (
     ValueArgument,
 )
 from ..widgets import Footer, CommandRunner
+from .choice_argument import ChoiceArgumentInputScreen
+from .value_argument import ValueArgumentInputScreen
 
 
 class MenuScreen(Screen):
@@ -153,11 +155,11 @@ class MenuScreen(Screen):
                 self.cur_input = ""
             case ChoiceArgument():
 
-                def set_argument_value_and_reset_input(value: int | List[str] | None):
+                def set_argument_value_and_reset_input(value: str | List[str] | None):
                     if value is None:
                         argument.selected = None
-                    elif isinstance(value, int):
-                        argument.selected = [argument.choices[value]]
+                    elif isinstance(value, str):
+                        argument.selected = [value]
                     else:
                         argument.selected = value
                     self.cur_input = ""

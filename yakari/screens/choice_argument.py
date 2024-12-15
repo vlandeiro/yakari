@@ -2,10 +2,33 @@ from typing import List
 
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
-from textual.widgets import OptionList, SelectionList
+from textual.widgets import (
+    SelectionList as BaseSelectionList,
+    OptionList as BaseOptionList,
+)
+from textual.message import Message
 
 from ..types import ChoiceArgument
 from ..widgets import Footer
+
+
+class SelectionList(BaseSelectionList):
+    BINDINGS = [
+        ("enter", "submit_selection", "submit input"),
+    ]
+
+    class SelectionSubmitted(Message):
+        def __init__(self, selection):
+            super().__init__()
+            self.selection = selection
+
+    def action_submit_selection(self):
+        self.post_message(self.SelectionSubmitted(self.selected))
+
+
+class OptionList(BaseOptionList):
+    BINDINGS = [("enter", "select", "submit input")]
+    pass
 
 
 class ChoiceArgumentInputScreen(ModalScreen[int | List[str] | None]):
@@ -42,9 +65,13 @@ class ChoiceArgumentInputScreen(ModalScreen[int | List[str] | None]):
         yield self.widget
         yield Footer()
 
-    def action_submit_input(self):
-        result = getattr(self.widget, self.result_attr)
-        self.dismiss(result)
+    def on_option_list_option_selected(self, message: OptionList.OptionSelected):
+        self.dismiss(message.option.prompt)
+
+    def on_selection_list_selection_submitted(
+        self, message: SelectionList.SelectionSubmitted
+    ):
+        self.dismiss(message.selection)
 
     def action_cancel(self):
         self.dismiss(None)
