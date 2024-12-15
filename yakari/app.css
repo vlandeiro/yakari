@@ -54,7 +54,7 @@ ModalScreen > Vertical {
     align: center middle;
 }
 
-ResultScreen > CommandResultsWidget {
+ResultsScreen > CommandRunner {
     width: 100%;
     height: 90vh;
     border-top: $primary wide;
@@ -64,7 +64,7 @@ ResultScreen > CommandResultsWidget {
     dock: bottom;
 }
 
-ResultScreen RichLog {
+ResultsScreen RichLog {
     padding: 1;
     background: $background;
 }
