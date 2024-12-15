@@ -18,7 +18,7 @@ class Footer(BaseFooter):
 
         inputs = self._get_full_input()
 
-        yield Label(" > ".join(inputs))
+        yield Label(" > ".join(inputs), id="cur-input")
 
         labels = [Label("Shortcuts:", classes="title")]
         bindings = [
@@ -30,3 +30,7 @@ class Footer(BaseFooter):
             labels.append(Label(f"({binding.key})", classes="help"))
             labels.append(Label(binding.description))
         yield Horizontal(*labels, id="help-section")
+
+        edit_mode = getattr(self.app.screen, "edit_mode", None)
+        hint = "edit" if edit_mode else "toggle"
+        yield Label(f"Mode: {hint}", id="hint-edit")

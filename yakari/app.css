@@ -19,28 +19,35 @@ Footer {
     padding: 0;
 }
 
-Footer #cur-input {
-    width: 10vw;
-    align: left middle;
-}
+Footer {
+    #cur-input {
+        width: 10fr;
+        align: left middle;
+    }
 
-Footer #help-section {
-    width: 90vw;
-    align: center middle;
-}
+    #help-section {
+        width: 80fr;
+        align: center middle;
+    }
 
-#help-section Label {
-    margin: 0 1;
-}
+    #help-section Label {
+        margin: 0 1;
+    }
 
-Horizontal .title {
-    color: $accent-darken-1;
-    text-style: bold;
-}
+    Horizontal .title {
+        color: $accent-darken-1;
+        text-style: bold;
+    }
 
-Horizontal .help {
-    color: $primary-lighten-3;
-    text-style: bold;
+    Horizontal .help {
+        color: $primary-lighten-3;
+        text-style: bold;
+    }
+
+    Horizontal#edit-hint {
+        align: left middle;
+        width: 5fr;
+    }
 }
 
 ModalScreen Input {
