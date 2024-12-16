@@ -257,11 +257,11 @@ class ValueArgument(NamedArgument):
         return self.value
 
 
-ArgumentImpl = FlagArgument | ValueArgument | ChoiceArgument
+BaseArgumentImpl = FlagArgument | ValueArgument | ChoiceArgument
 
 
 class MenuArguments(YakariType):
-    include: Literal["*"] | List[str]
+    include: Literal["*"] | str | List[str]
     exclude: List[str] | None = None
     scope: Literal["this"] | Literal["all"] = "all"
 
@@ -285,6 +285,49 @@ class MenuArguments(YakariType):
             }
 
         return arguments
+
+
+# class JoinArgument(YakariType):
+#     join: List[BaseArgumentImpl]
+#     separator: str = ""
+
+#     def render_template(self):
+#         return self.separator.join(
+#             [argument.render_template() for argument in self.arguments]
+#         )
+
+
+class CombineArguments(YakariType):
+    pass
+
+
+class InterpolateArgument(CombineArguments):
+    interpolate: List[BaseArgumentImpl | MenuArguments | str]
+
+    def render_template(self, menu: "Menu") -> str:
+        rendered_str = ""
+        for part in self.interpolate:
+            match part:
+                case Argument():
+                    rendered_str += part.render_template()
+                case MenuArguments():
+                    arguments = part.resolve_arguments(menu)
+                    for arg in arguments.values():
+                        if arg.enabled:
+                            rendered_arg = arg.render_template()
+                            match rendered_arg:
+                                case str():
+                                    rendered_str += rendered_arg
+                                case list():
+                                    rendered_str += "".join(rendered_arg)
+                case str():
+                    rendered_str += part
+        return rendered_str
+
+
+CombineArgumentImpl = InterpolateArgument
+
+ArgumentImpl = BaseArgumentImpl | CombineArgumentImpl
 
 
 CommandTemplate = List[str | MenuArguments | ArgumentImpl]
@@ -346,7 +389,7 @@ class Menu(YakariType):
     """
 
     name: str
-    arguments: Dict[Shortcut, ArgumentImpl] = Field(default_factory=dict)
+    arguments: Dict[Shortcut, BaseArgumentImpl] = Field(default_factory=dict)
     menus: Dict[Shortcut, Self] = Field(default_factory=dict)
     commands: Dict[Shortcut, Command] = Field(default_factory=dict)
     configuration: MenuConfiguration = Field(default_factory=MenuConfiguration)
@@ -433,6 +476,10 @@ class CommandTemplateResolver(YakariType):
                         update_resolved_command(argument.render_template())
                     else:
                         return None
+
+                case CombineArguments():
+                    update_resolved_command(part.render_template(menu))
+
                 case MenuArguments():
                     arguments = part.resolve_arguments(menu)
                     for key, argument in arguments.items():
