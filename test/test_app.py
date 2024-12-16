@@ -1,120 +1,109 @@
 import pytest
 
-from yakari.app import YakariApp
-from yakari.types import (
-    ChoiceArgument,
-    Command,
-    MenuArguments,
-    FlagArgument,
-    Menu,
-    ValueArgument,
-)
-
-
-@pytest.fixture
-def mock_app():
-    """Fixture providing a configured YakariApp instance."""
-    menu = Menu(
-        name="Test Menu",
-        commands={
-            "t": Command(
-                name="Test Command",
-                description="Test description",
-                template=["mock_app", MenuArguments(include="*")],
-            ),
-        },
-        arguments={
-            "-f": FlagArgument(flag="--flag", description="Test flag"),
-            "-v": ValueArgument(name="--value", description="Test value"),
-            "-c": ChoiceArgument(
-                name="--choice", description="Test choice", choices=["a", "b", "c"]
-            ),
-            "--long-flag": FlagArgument(
-                flag="--long-flag", description="Another test flag"
-            ),
-        },
-    )
-    app = YakariApp(menu, dry_run=True)
-    return app
-
 
 @pytest.mark.asyncio
-async def test_argument_inputs(mock_app):
-    """Test handling of argument input."""
-    async with mock_app.run_test() as pilot:
+async def test_flag_argument(demo_app):
+    async with demo_app.run_test() as pilot:
         # await pilot.pause()
 
         # Test flag argument
+        await pilot.press("a")
         await pilot.press(*"-f")
+        await pilot.press("d")
 
-        # Test value argument
-        await pilot.press(*"-v")
-        await pilot.press(*"foo")
-        await pilot.press("enter")
-
-        # Test choice argument
-        await pilot.press(*"-c")
-        await pilot.press("down", "enter")
-
-        # Call the command
-        await pilot.press("t")
-
-        assert mock_app.command == [
-            "mock_app",
+        assert demo_app.command == [
+            "echo",
+            "--parent=100",
             "--flag",
-            "--value",
-            "foo",
-            "--choice",
-            "b",
+            "--named-with-default=3",
         ]
 
 
 @pytest.mark.asyncio
-async def test_input_clearing_with_backspace(mock_app):
-    """Test clearing input field."""
-    async with mock_app.run_test() as pilot:
-        # await pilot.pause()
-        screen = pilot.app.screen
+async def test_single_value_named_argument(demo_app):
+    async with demo_app.run_test() as pilot:
+        await pilot.press("a")
+        await pilot.press(*"-n")
+        await pilot.press(*"foo")
+        await pilot.press("enter")
+        await pilot.press("d")
 
-        # Type something
-        await pilot.press(*"--long")
-        assert screen.cur_input == "--long"
-
-        # Clear input
-        await pilot.press("backspace")
-        assert screen.cur_input == "--lon"
-        await pilot.press(*["backspace"] * 5)
-        assert screen.cur_input == ""
-
-
-@pytest.mark.asyncio
-async def test_input_autoclearing(mock_app):
-    """Test auto-clearing input field when there are no match."""
-    async with mock_app.run_test() as pilot:
-        # await pilot.pause()
-        screen = pilot.app.screen
-
-        # Type something
-        await pilot.press(*"--long")
-        assert screen.cur_input == "--long"
-
-        # Auto-clear input because there are no matching entries
-        await pilot.press("e")
-        assert screen.cur_input == ""
+        assert demo_app.command == [
+            "echo",
+            "--parent=100",
+            "--named=foo",
+            "--named-with-default=3",
+        ]
 
 
 @pytest.mark.asyncio
-async def test_input_tab_completion(mock_app):
-    """Test clearing input field."""
-    async with mock_app.run_test() as pilot:
-        # await pilot.pause()
-        screen = pilot.app.screen
+async def test_multiple_values_named_argument(demo_app):
+    async with demo_app.run_test() as pilot:
+        # go to the arguments menu
+        await pilot.press("a")
 
-        # Type something
-        await pilot.press(*"--long")
-        assert screen.cur_input == "--long"
+        await pilot.press(*"--mn")
+        # type foo
+        await pilot.press(*"foo")
+        await pilot.press("enter")
+        # type bar
+        await pilot.press(*"bar")
+        await pilot.press("enter")
+        # select the last suggestion
+        await pilot.press("shift+tab")
+        await pilot.press("up")
+        await pilot.press("enter")
+        await pilot.press("enter")
 
-        # Complete input on tab press and activate flag
-        await pilot.press("tab")
-        assert screen.cur_input == ""
-        assert mock_app.menu.arguments["--long-flag"].enabled
+        # submit the selected values
+        await pilot.press("enter")
+        # run the echo command
+        await pilot.press("d")
+
+        assert demo_app.command == [
+            "echo",
+            "--parent=100",
+            "--named-with-default=3",
+            "--multi-named=foo",
+            "--multi-named=bar",
+            "--multi-named=peach",
+        ]
+
+
+@pytest.mark.asyncio
+async def test_single_choice_argument(demo_app):
+    async with demo_app.run_test() as pilot:
+        await pilot.press("a")
+        await pilot.press(*"-c")
+        await pilot.press("down")
+        await pilot.press("enter")
+        await pilot.press("d")
+
+        assert demo_app.command == [
+            "echo",
+            "--parent=100",
+            "--named-with-default=3",
+            "--single-choice=rust",
+        ]
+
+
+@pytest.mark.asyncio
+async def test_multi_choice_argument(demo_app):
+    async with demo_app.run_test() as pilot:
+        await pilot.press("a")
+        await pilot.press(*"--mc")
+        # select "jazz"
+        await pilot.press("space")
+        # select "npr news"
+        await pilot.press("down", "down", "space")
+
+        await pilot.press("enter")
+        await pilot.press("d")
+
+        assert demo_app.command == [
+            "echo",
+            "--parent=100",
+            "--named-with-default=3",
+            "--multi-choice=jazz",
+            "--multi-choice=npr news",
+        ]
