@@ -1,8 +1,13 @@
 from textual.app import ComposeResult
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import OptionList
+from textual.widgets import OptionList as BaseOptionList
 from textual.widgets.option_list import Option, Separator
+
+
+class OptionList(BaseOptionList):
+    BINDINGS = [("enter", "select", "select")]
+    pass
 
 
 class SuggestionsWidget(Widget):
@@ -24,6 +29,11 @@ class SuggestionsWidget(Widget):
             id="suggestions",
         )
         self.suggestions_widget.border_title = "Suggested values"
+
+    def on_option_list_option_selected(self, message: OptionList.OptionSelected):
+        value = message.option.prompt
+        self.post_message(self.SuggestionSelected(value))
+        message.stop()
 
     def compose(self) -> ComposeResult:
         yield self.suggestions_widget

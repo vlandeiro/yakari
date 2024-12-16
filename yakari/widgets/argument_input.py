@@ -4,15 +4,19 @@ from textual.app import ComposeResult
 from textual.message import Message
 from textual.suggester import SuggestFromList
 from textual.widget import Widget
-from textual.widgets import Input
+from textual.widgets import Input as BaseInput
 
 from .. import constants as C
 from ..types import Argument, History
 from .tags import TagsCollection
 
 
+class Input(BaseInput):
+    BINDINGS = [("enter", "submit", "submit")]
+
+
 class ArgumentInput(Widget):
-    BINDINGS = [("ctrl+q", "cancel", "Cancel")]
+    BINDINGS = [("ctrl+q", "cancel", "cancel")]
 
     class Submitted(Message):
         def __init__(self, value: list[str] | str) -> None:

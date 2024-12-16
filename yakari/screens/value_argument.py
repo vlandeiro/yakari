@@ -59,9 +59,8 @@ class ValueArgumentInputScreen(ModalScreen[str | None]):
     def on_argument_input_submitted(self, message: ArgumentInput.Submitted):
         self.dismiss(message.value)
 
-    def on_option_list_option_selected(self, message: OptionList.OptionSelected):
-        value = message.option.prompt
-        self.input_widget.set_value(value)
+    def on_suggestions_widget_suggestion_selected(self, message: SuggestionsWidget.SuggestionSelected):
+        self.input_widget.set_value(message.value)
         self.input_widget.focus()
         message.stop()
 

@@ -13,8 +13,7 @@ class Tag(Widget):
     value: reactive[str] = reactive(str, recompose=True)
 
     BINDINGS = [
-        ("backspace", "delete_this", "Delete"),
-        ("enter", "delete_this", "Delete"),
+        ("backspace", "delete_this", "delete"),
     ]
 
     class Deleted(Message):

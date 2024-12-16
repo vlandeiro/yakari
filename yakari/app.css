@@ -44,8 +44,8 @@ Footer {
         text-style: bold;
     }
 
-    Horizontal#edit-hint {
-        align: left middle;
+    #edit-hint {
+        align: right middle;
         width: 5fr;
     }
 }

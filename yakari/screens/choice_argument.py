@@ -14,7 +14,7 @@ from ..widgets import Footer
 
 class SelectionList(BaseSelectionList):
     BINDINGS = [
-        ("enter", "submit_selection", "submit input"),
+        ("enter", "submit_selection", "submit"),
     ]
 
     class SelectionSubmitted(Message):
@@ -27,7 +27,7 @@ class SelectionList(BaseSelectionList):
 
 
 class OptionList(BaseOptionList):
-    BINDINGS = [("enter", "select", "submit input")]
+    BINDINGS = [("enter", "select", "submit")]
     pass
 
 
@@ -39,7 +39,7 @@ class ChoiceArgumentInputScreen(ModalScreen[int | List[str] | None]):
     """
 
     BINDINGS = [
-        ("enter", "submit_input", "submit input"),
+        ("enter", "submit_input", "submit"),
         ("ctrl+q", "cancel", "cancel"),
     ]
 
