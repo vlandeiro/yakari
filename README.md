@@ -55,15 +55,16 @@ Play around with this in a git repo!
 
 ### Basic Navigation
 
-Yakari is an interactive command menu that makes it easy to run complex commands. 
-Think of it as a smart command launcher where you type shortcuts instead of remembering full commands.
+Yakari is an interactive command menu that makes it easy to run complex
+commands. Think of it as a command launcher where you type shortcuts instead of
+remembering full commands.
 
 #### Start Typing
 
 When you launch Yakari, you'll see a menu of available options. Every menu item has a shortcut (shown on the left). Type the shortcut to select it:
 - Commands (things you can run)
 - Arguments (options you can set)
-- Subcommands (more options inside)
+- Submenus (more options inside)
 
 Other important keyboard shortcuts let you interact with the TUI:
 
@@ -107,12 +108,20 @@ uv add git+https://github.com/vlandeiro/yakari.git
 
 ## Menus
 
-Yakari comes with a set of [pre-defined
-menus](https://github.com/vlandeiro/yakari-menus) that you can use via `ykr
-<command-name>` (e.g. `ykr git`) without having to copy them to your machine.
+A command menu is a TOML configuration file that defines a hierarchical
+interface for executing commands. It allows you to:
+- Organize related commands into menus
+- Define reusable arguments
+- Create interactive prompts for command values
 
-You can also create custom menus by looking at existing examples and reading the documentation from [yakari-menus](https://github.com/vlandeiro/yakari-menus/blob/main/README.md).
+Install new menus by copying the corresponding TOML file into
+`$HOME/.config/yakari/menus`. If you're interested in creating your own menus,
+take a look at dedicated [readme from
+yakari-menus](https://github.com/vlandeiro/yakari-menus/blob/main/README.md).
 
+>[!TIP] Yakari comes with a few [pre-defined
+> menus](https://github.com/vlandeiro/yakari-menus) that you can use directly
+> via `ykr <command-name>` (e.g. `ykr git`).
 
 ## Features
 
