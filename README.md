@@ -121,9 +121,9 @@ Install new menus by copying the corresponding TOML file into
 take a look at dedicated [readme from
 yakari-menus](https://github.com/vlandeiro/yakari-menus/blob/main/README.md).
 
->[!TIP] Yakari comes with a few [pre-defined
-> menus](https://github.com/vlandeiro/yakari-menus) that you can use directly
-> via `ykr <command-name>` (e.g. `ykr git`).
+> [!TIP]
+> Yakari comes with a few [pre-defined menus](https://github.com/vlandeiro/yakari-menus)
+> that you can use directly via `ykr <command-name>` (e.g. `ykr git`).
 
 ## Features
 
