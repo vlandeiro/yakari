@@ -31,7 +31,7 @@ options:
 With [uv](https://github.com/astral-sh/uv):
 
 ``` bash
-uvx --from git+https://github.com/vlandeiro/yakari ykr demo
+uvx --from yakari ykr demo
 ```
 
 will start a demo that showcases the different types or arguments and commands
@@ -39,7 +39,7 @@ supported by Yakari. This demo only run `echo` commands so it's safe to use
 anywhere.
 
 ``` bash
-uvx --from git+https://github.com/vlandeiro/yakari ykr git
+uvx --from yakari ykr git
 ```
 
 will start a TUI with basic `git` features. The video below shows how to use
@@ -97,14 +97,14 @@ Edit Mode (press `ctrl+e` to switch):
 
 ### (Optional) Installation
 
-Yakari is not yet published to PyPI - install directly from GitHub:
+Yakari is published to PyPI:
 
 ```bash
 # Using pip
-pip install git+https://github.com/vlandeiro/yakari.git
+pip install yakari
 
 # Using uv
-uv add git+https://github.com/vlandeiro/yakari.git
+uv add yakari
 ```
 
 
@@ -142,7 +142,6 @@ yakari-menus](https://github.com/vlandeiro/yakari-menus/blob/main/README.md).
 
 ### Roadmap
 
-- Publish to PyPi
 - Add argument types:
   - File argument
 - Support environment variables
