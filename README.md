@@ -1,5 +1,7 @@
 # Yakari
 
+[![pytest](https://github.com/vlandeiro/yakari/actions/workflows/python-test.yml/badge.svg)](https://github.com/vlandeiro/yakari/actions/workflows/python-test.yml)
+
 Transform complex command-line interfaces into guided, interactive experiences.
 Yakari helps users build commands step by step, making CLI tools more accessible
 and user-friendly.
