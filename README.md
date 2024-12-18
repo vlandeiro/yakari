@@ -21,7 +21,7 @@ options:
   -h, --help     show this help message and exit
   -d, --dry-run  If toggled, Yakari only prints the command rather than running it.
   -n, --native   When toggled, run the command in the original shell instead of
-                 within the Yakari menu.
+                 within the Yakari TUI.
 ```
 
 ### Try it out!
@@ -104,10 +104,14 @@ pip install git+https://github.com/vlandeiro/yakari.git
 uv add git+https://github.com/vlandeiro/yakari.git
 ```
 
-> [!TIP]
-> Yakari comes with a set of [pre-defined menus](https://github.com/vlandeiro/yakari-menus)
-> that you can use via `ykr <command-name>` (e.g. `ykr git`) without having to copy
-> them to your machine.
+
+## Menus
+
+Yakari comes with a set of [pre-defined
+menus](https://github.com/vlandeiro/yakari-menus) that you can use via `ykr
+<command-name>` (e.g. `ykr git`) without having to copy them to your machine.
+
+You can also create custom menus by looking at existing examples and reading the documentation from [yakari-menus](https://github.com/vlandeiro/yakari-menus/blob/main/README.md).
 
 
 ## Features
@@ -126,8 +130,7 @@ uv add git+https://github.com/vlandeiro/yakari.git
   - Multi-value argument
 
 ### Roadmap
-- Add unit tests everywhere
-- Add documentation on creating custom menus
+
 - Publish to PyPi
 - Add argument types:
   - File argument
