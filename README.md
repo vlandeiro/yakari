@@ -104,7 +104,7 @@ Yakari is published to PyPI:
 pip install yakari
 
 # Using uv
-uv add yakari
+uv tool install yakari
 ```
 
 
