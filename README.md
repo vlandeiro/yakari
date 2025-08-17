@@ -42,7 +42,7 @@ anywhere.
 uvx --from yakari ykr git
 ```
 
-will start a TUI with basic `git` features. The video below shows how to use
+will start a Terminal User Interface (TUI) with basic `git` features. The video below shows how to use
 this TUI to:
 
 - list branches
@@ -104,7 +104,7 @@ Yakari is published to PyPI:
 pip install yakari
 
 # Using uv
-uv add yakari
+uv tool install yakari
 ```
 
 
