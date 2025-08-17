@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import OptionList as BaseOptionList
-from textual.widgets.option_list import Option, Separator
+from textual.widgets.option_list import Option
 
 
 class OptionList(BaseOptionList):
@@ -20,7 +20,7 @@ class SuggestionsWidget(Widget):
         super().__init__(*args, **kwargs)
         self.suggested_values = list(filter(None, suggested_values))
         fmt_suggested_values = [
-            Option(value) if value is not None else Separator()
+            Option(value)
             for value in suggested_values
         ]
 
